@@ -17,6 +17,12 @@ Format per entry: date, what was done, decisions made, open questions, next step
 
 ---
 
+## 2026-09-20 21:00 — 可迁移仓库本地已提交，远端仓库尚未创建
+
+本地 `10f5219` + `38c1df3`（1033 个 `result.json`，灵魂文件与 HANDOFF 在树上）。remote `icassp` 已指向 `git@github.com:yixiangsunLeo/ICASSP.git`。`git push icassp main` 返回 `Repository not found`——GitHub 上还没有这个空仓库。未 push 到旧 `origin`（EEG.git）。未改训练闭包、未 scancel。用户在 github.com/new 建好 **private、不要 README** 的 `yixiangsunLeo/ICASSP` 后即可 `git push -u icassp main`。
+
+---
+
 ## 2026-09-20 20:30 — 可迁移仓库 + 3090 交接（D-041）
 
 用户要在 3090 账号训练，且那边读不到 `/share/workspace2`。已写给那边 AI 执行的 `HANDOFF.md` + `docs/handoff/`（安装、数据前缀改写、预检、同路径训练、`result.json` 回传）。新增 `scripts/repath_manifests.py`、`scripts/handoff_preflight.sh`、`scripts/sync_results_git.sh`。`.gitignore` 放行小结果文件，不放 npz/pt/`paths.local.yaml`。未改 `code/` 训练闭包、未改 `scripts/slurm/`、未改 yuan 的 `paths.local.yaml`、未 scancel。下一步：把可迁移树推进 `https://github.com/yixiangsunLeo/ICASSP`；用户在 4090 上按 HANDOFF Phase 3 rsync 数据。
