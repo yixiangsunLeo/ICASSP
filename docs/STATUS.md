@@ -4,7 +4,7 @@ tags:
   - "#modality/eeg"
   - "#method/snn"
 created: "2026-09-18"
-updated: "2026-09-20 20:30"
+updated: "2026-09-20 21:00"
 status: "active"
 ---
 
@@ -25,19 +25,11 @@ status: "active"
 | **外部基线轮（D-034）** | Linzh 60 cell **已合并**；yuan 还在跑：2C tcformer 7/10、3C eegpt 9/11 | 3C labram/cbramod/ANN/tcformer(SHU+3C) ✅ |
 | **AdaHGNN-MI（D-040）** | **71825–71830 仍 PENDING，从未上卡**（无 Slurm 日志） | 等 yuan 收尾腾卡；冒烟后再全量 |
 | **Linzh split 43（D-036）** | 4 卡在跑 2C；split43 已落 12 个 `result.json`（eegnet 5 + fbcnet 4 + atcnet 2 + labram 1）；SHU 尚未开 | 90 cell；QOS 4 卡满 |
-| **3090 可迁移仓库（D-041）** | `https://github.com/yixiangsunLeo/ICASSP`（private）。交接 = 根目录 `HANDOFF.md`。npz 不进 git | 那边 AI 按 HANDOFF 落地；结果经 `result.json` 同步回本树 |
+| **3090 可迁移仓库（D-041）** | **已推** `https://github.com/yixiangsunLeo/ICASSP`（private，`icassp/main`）。remote `icassp` = `git@github.com-yixiangsunLeo:yixiangsunLeo/ICASSP.git`（默认 `github.com` 是 LiaoEuan，必须走 yixiangsunLeo 别名）。交接 = `HANDOFF.md`（没点名就停）。npz 不进 git | 那边 `git clone` / `git pull` 后按 HANDOFF 落地；结果经 `result.json` 同步回本树 |
 
-## 3090 缺口（那边 AI 只补没有 `result.json` 的格子）
+## 3090 用途（用户 09-20 21:00 更正）
 
-以本仓库 pull 下来的 `outputs/experiments/**/result.json` 为准，不要重跑已齐的条目。期望：2C/SHU 每模型 10 cell（split 41+42），3C 每模型 11（LOSO），s43 每模型每队列 5。
-
-| 优先 | 条目 | 配置 / plan | 期望 | 4090 侧备注（20:30） |
-|:---|:---|:---|:---|:---|
-| 1 | `adahgnn@mi` + `adahgnn@mi_mix` × 三队列 | `scripts/slurm/baselines_plan_adahgnn.txt` | 62 | 71825–71830 在 4090 仍可能排队；先 `find` 再决定是否在 3090 开，避免双边同时写同一 cell |
-| 2 | 2C `tcformer` 未齐折、3C `eegpt` 未齐折、SHU `seegnex@s_plif` 最后 1 cell | 原 `snn_*` / `bl_*` 命令续跑 | 缺几个补几个 | 4090 收尾作业可能先完成；有 `result.json` 就跳过 |
-| 3 | split 43（只 2C+SHU） | `bl_{wbci2c,shu}_zs_s43.yaml` | 90 | Linzh 在 4090 跑；3090 不要抢已经在跑的模型 |
-
-**禁止**在 3090 重跑 2C 主 50、3C 主 55、以及已经 10/10 的外部基线。
+先同步代码、落地环境与数据。**yuan / Linzh 正在跑的作业不自动搬过去**，跑哪些模型由用户点名。后续主线：学长改完的 **S-EEGNeX-D**（`seegnex@hplif`）和 **AdaHGNN**，在本树整合 → GitHub → 3090 训 → `result.json` 写同一相对路径 → GitHub 拉回。那边 AI 没听到点名就停在 `PREFLIGHT OK`。
 
 ## 1. 正在跑（lr 1e-4；**只剩 `zs` 臂**（逐 trial z-score）；eaz 臂 10 个作业 09-19 01:50 已取消，D-035）
 

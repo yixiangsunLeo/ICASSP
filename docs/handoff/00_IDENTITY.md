@@ -16,7 +16,8 @@ audience: "3090 migration AI"
 - 在本账号下安装 conda 环境 `mi_torch_cu118`。
 - 写本仓库的 `code/configs/paths.local.yaml`（gitignore）。
 - 对本机拷来的 manifest 跑 `scripts/repath_manifests.py`。
-- 在本集群提交 **你自己的** GPU 作业，配置用仓库里已有的 `snn_*` / `bl_*`。
+- 只在用户**点名模型和队列**之后，才在本集群提交 GPU 作业。没点名：环境 + 数据 + 预检做完就停。
+- 不要把 4090 / Linzh 正在跑的作业自动搬过来。
 - 把新的 `result.json` 和 `outputs/analysis/**` 经 `scripts/sync_results_git.sh` commit + push 到 `yixiangsunLeo/ICASSP`。
 - 更新本仓库的 `docs/STATUS.md`、`progress.md`。
 
@@ -33,5 +34,5 @@ audience: "3090 migration AI"
 
 1. `bash scripts/handoff_preflight.sh` 打印 `PREFLIGHT OK`。
 2. GPU 冒烟 2 epoch 不崩。
-3. 正式训练写入 `outputs/experiments/{wbci_shu,shu}/snn_*_zs_lr1e4_v1/cells/<model>__.../result.json`。每个缺口条目满足 `n_cells == n_folds × n_splits`（2C/SHU 每模型 10，3C 每模型 11，s43 每模型每队列 5）。对照 `docs/STATUS.md` 的「3090 缺口」表。
-4. `SYNC_COMMIT=1 SYNC_PUSH=1 bash scripts/sync_results_git.sh` 之后，4090 上 `git pull` 能在 **同一相对路径** 读到这些 `result.json`。
+3. 用户点名后，结果写入 `outputs/experiments/{wbci_shu,shu}/snn_*_zs_lr1e4_v1/cells/<model>__.../result.json`（和 4090 同一相对路径）。
+4. `SYNC_COMMIT=1 SYNC_PUSH=1 bash scripts/sync_results_git.sh` 之后，4090 上 `git pull` 能读到这些 `result.json`。

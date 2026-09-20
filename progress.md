@@ -4,7 +4,7 @@ tags:
   - "#modality/eeg"
   - "#pipeline/5_dl_model"
 created: "2026-06-10"
-updated: "2026-09-20 20:30"
+updated: "2026-09-20 21:00"
 status: "active"
 ---
 
@@ -14,6 +14,24 @@ The project's running memory. **Append a dated entry whenever you finish a
 meaningful step or make a design decision.** Newest entries on top. Keep it factual.
 
 Format per entry: date, what was done, decisions made, open questions, next step.
+
+---
+
+## 2026-09-20 21:05 — 最新交接更正 + 3 个 AdaHGNN result.json 推 icassp
+
+把「3090 没点名就停」写进 `HANDOFF.md` / STATUS / handoff 身份与训练卡，并跟踪新落盘的 `adahgnn-mi` SHU split41 fold1、`adahgnn-mi_mix` SHU split41 fold1、`adahgnn-mi` 3C fold8。不改训练闭包，不推 `.pt` / npz。
+
+---
+
+## 2026-09-20 21:00 — 已推到 github.com/yixiangsunLeo/ICASSP
+
+`git push -u icassp main` 成功。远端 `main` = `e73abd9`。原因：默认 `git@github.com` 认证的是 LiaoEuan，对这个 private 仓报 `Repository not found`；改 remote 为 `git@github.com-yixiangsunLeo:yixiangsunLeo/ICASSP.git` 后可写。未推旧 `origin`（EEG.git）。HANDOFF Phase 11 更正还在工作区，未进这次 push。
+
+---
+
+## 2026-09-20 21:00 — 用户更正 3090 用途：先同步代码，跑哪些模型由他点名
+
+不要把 yuan / Linzh 正在跑的作业自动搬到 3090。后续主线 = 学长改完的 S-EEGNeX-D（`seegnex@hplif`）和 AdaHGNN，在本树整合后经 GitHub 过去训，`result.json` 写同一相对路径再拉回。`HANDOFF.md` Phase 11 / STATUS「3090 缺口」已改成「没点名就停」。数据仍走 rsync，不进 git。
 
 ---
 

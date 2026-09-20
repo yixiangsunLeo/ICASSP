@@ -359,7 +359,11 @@ python code/run.py \
 
 ---
 
-# Phase 11 — 正式训练（路径必须和 4090 一样）
+# Phase 11 — 正式训练（默认：先落地，等用户点名再跑）
+
+**不要**把 4090 / Linzh 正在跑或已跑的作业自动搬过来补齐。那些跑不跑 3090，**只有用户一句话才能开**。
+
+用户后续主线（点名之后才跑）：**S-EEGNeX-D**（`seegnex@hplif`）和 **AdaHGNN-MI**（`adahgnn@mi` / `adahgnn@mi_mix`）。学长改完的代码会先在 4090 这棵树整合，再 `git pull` 到你这边跑。没点名之前：Phase 4–9 把环境、数据、路径做完，**停在 `PREFLIGHT OK`，不要 sbatch。**
 
 三个正式目录，**一个字都不要改**：
 
@@ -383,30 +387,20 @@ for r in wbci_shu/snn_wbci2c_zs_lr1e4_v1 shu/snn_shu_zs_lr1e4_v1 wbci_shu/snn_wb
 done
 ```
 
-再读 `docs/STATUS.md`。只补 **没有** `result.json` 的条目。典型缺口（以你 pull 到的 STATUS 为准，不要照抄过期数字）：
+用户点名之后再读 `docs/STATUS.md`，只跑他写下的模型。没点名就停。
 
-- AdaHGNN-MI 三队列：`adahgnn@mi` + `adahgnn@mi_mix`（`scripts/slurm/baselines_plan_adahgnn.txt`）
-- 若 2C `tcformer` / 3C `eegpt` / SHU `seegnex@s_plif` 仍缺 cell：用原来的 submit 命令续跑
-- split-43 只在 2C+SHU，配置 `bl_{wbci2c,shu}_zs_s43.yaml`；3C 不加 43
-
-有 Slurm 时（把 `PARTITION` 换成 Phase 2 的真名）：
+点名之后有 Slurm 时（`PARTITION` 换成 Phase 2 的真名）。例如用户说跑 S-EEGNeX-D：
 
 ```bash
 export PARTITION='<本集群 GPU 分区>'
 export CONDA_ROOT="$(conda info --base)"
 export MI_ENV=mi_torch_cu118
 export N_LINKS=2
-export NICE=50
-export SMOKE_FIRST=1
-
-# 先 dry-run，确认 -p 分区是新集群的
-DRY_RUN=1 bash scripts/slurm/submit_baselines.sh scripts/slurm/baselines_plan_adahgnn.txt
-
-# 预检通过、dry-run 分区正确，再真提交
-bash scripts/slurm/submit_baselines.sh scripts/slurm/baselines_plan_adahgnn.txt
+DRY_RUN=1 bash scripts/slurm/submit_snn.sh \
+  code/configs/experiments/snn_wbci2c_zs_lr1e4.yaml c2d "seegnex@hplif"
 ```
 
-没有 Slurm：在 GPU 节点上对缺的模型逐条 `python code/run.py --config ... --models ...`，仍然不要 `--out`。
+用户说跑 AdaHGNN 时才用 `scripts/slurm/baselines_plan_adahgnn.txt`。没有 Slurm：GPU 节点上 `python code/run.py --config ... --models ...`，不要 `--out`。
 
 作业墙钟不是 48 h 时：用环境变量 / `sbatch -t` 覆盖，**不要改** `scripts/slurm/*.sbatch` 里写死的 4090 默认值（那些文件同时被 4090 作业使用的副本若被 push 回去会害 yuan）。本机需要不同默认时，用命令行 `sbatch -p ... -t ...` 包一层，或设 `PARTITION`。
 

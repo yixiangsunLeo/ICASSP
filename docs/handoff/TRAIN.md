@@ -33,7 +33,7 @@ for r in wbci_shu/snn_wbci2c_zs_lr1e4_v1 shu/snn_shu_zs_lr1e4_v1 wbci_shu/snn_wb
 done
 ```
 
-对照 `docs/STATUS.md`。只提交缺的模型。不要重跑已经 10/10、55/55 的条目。
+**默认不提交任何作业。** 4090 / Linzh 正在跑的不要搬。等用户点名；后续主线是 `seegnex@hplif`（S-EEGNeX-D）和 `adahgnn@mi` / `adahgnn@mi_mix`。点名之后只跑他说的条目，不要重跑已经有 `result.json` 的 cell。
 
 # 提交方式
 
