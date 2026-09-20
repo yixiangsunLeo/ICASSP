@@ -1,10 +1,20 @@
 ---
-description: Agent behavior and documentation discipline
+description: Agent behaviour and documentation discipline
 alwaysApply: true
 ---
 
-# Agent Behavior
+# Agent behaviour
 
-Before coding, read `AGENTS.md`, `CLAUDE.md`, `0_docs/STATUS.md`, and `0_docs/ARCHITECTURE.md`. Preserve the research chain and do not jump ahead. Every new file needs a description in the nearest README and `0_docs/FILE_CATALOG.md`. Filesystem create/move/delete/rename operations must be logged in `0_docs/operation_log.md`.
-
-Never fabricate results. Keep Markdown frontmatter valid. Use clear English or Chinese comments for EEG-specific decisions.
+- On a **new machine / 3090 clone**: execute root `HANDOFF.md` first, then `AGENTS.md`.
+  On this 4090 tree: read `AGENTS.md` → `docs/STATUS.md` → top of `progress.md` before acting.
+  Do not jump ahead of the plan; do not write "done" for anything whose `result.json` is not on disk.
+- Four living documents, and when to touch them: `AGENTS.md` only when a rule/contract/long-term fact changes;
+  `docs/STATUS.md` whenever job state, cell counts, next steps or the countdown change (update it before ending
+  a session); `progress.md` one dated entry per substantive action (newest on top); `docs/DECISIONS.md` one
+  numbered entry per decision that changes numbers, protocol or wording. No FILE_CATALOG / operation_log mirrors.
+- Never fabricate results. Never peek at test metrics to choose the main model (pre-registration in
+  `docs/PLAN_spiking_eegnex_icassp2027.md` §0.3 rules).
+- Reports follow: core conclusion → goal → method → protocol → results → analysis → relation to prior work →
+  next step → file list. Markdown under root and `docs/` carries YAML frontmatter; snake_case filenames.
+- Everything the senior needs to see goes to `docs/reports/` as a dated file; do not leave knowledge only in chat.
+- Keep `SYX/` top level clean: ICASSP material only in this directory, benchmark material only in `../Benchmark`.

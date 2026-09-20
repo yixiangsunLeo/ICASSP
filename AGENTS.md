@@ -1,370 +1,153 @@
-# AGENTS.md — Project Soul Memory
+---
+title: "AGENTS.md — ICASSP 2027 项目灵魂记忆"
+tags:
+  - "#modality/eeg"
+  - "#pipeline/5_dl_model"
+  - "#method/snn"
+  - "#method/domain_generalization"
+created: "2026-09-18"
+updated: "2026-09-20 20:30"
+status: "active"
+---
 
-> 唯一权威灵魂记忆文件。后续 Agent / 人类进入本项目，先读本文件。  
-> `CLAUDE.md` 只是兼容入口，指向本文件；`.cursor/rules/` 是机器可读规则切片，不再作为独立灵魂文件。
+# AGENTS.md — 唯一权威灵魂记忆（先读这个）
 
-## 0. Authoritative Files
+> 任何 Agent / 人进入本目录先读本文件（5 分钟），再按 §0 的顺序读状态文件。
+> 本文件只放**长期有效**的身份、已验证事实、规则与契约。「现在做到哪、什么在跑」在 `docs/STATUS.md`；
+> 逐日流水在 `progress.md`；每个影响口径的决定在 `docs/DECISIONS.md`。**结果数字不进本文件**，
+> 只给出它们在哪个表里。`CLAUDE.md` 与 `.cursor/rules/` 只是入口和机器可读切片，都指向这里。
 
-| 类型 | 文件 | 作用 |
-|:---|:---|:---|
-| 灵魂记忆 | `AGENTS.md` | 本文件，唯一权威项目记忆与执行准则。 |
-| **当前主线计划（2026-08-27 起）** | **`docs/PLAN_cross_subject_benchmark_and_fusion.md`** | **跨被试 benchmark + ATCNet×S4ERP 融合**：27 条锁定决定、两数据集 6:2:2 协议、18 个模型条目、配方、算力、P0–P4 步骤、全实验清单审计。**取代 `FOUNDATION_E2E_ROUTE_PLAN.md` 成为当前权威路线。** |
-| 复现指南 | `REPRODUCE.md` | 环境 / 数据核验 / smoke 验收脚本 / 全量提交 / 统计口径 / 确定性说明。 |
-| 上一条主线路线 | `FOUNDATION_E2E_ROUTE_PLAN.md` | 端到端基础模型 × 跨被试（2026-08-04）：仍可参考 checkpoint/续跑契约；协议部分已被上面的计划取代。 |
-| 进度日记 | `progress.md` | PROGRESS 角色，逐条追加运行记忆，最新在上。 |
-| 架构+结构 | `0_docs/ARCHITECTURE.md` | 目录结构、代码分层、每个文件作用。 |
-| 状态+就绪 | `0_docs/STATUS.md` | 进度、能否跑、SHU 就绪、下一步、清理策略。 |
-| 文件索引 | `0_docs/FILE_CATALOG.md` | 新增文件后必须同步。 |
-| 操作日志 | `0_docs/operation_log.md` | 只记录创建、删除、移动、重命名。 |
+## 0. 文件路由（进门先看）
 
-> **核心灵魂集（交接 / ChatGPT 导入用）= `AGENTS.md` + `progress.md` + `0_docs/STATUS.md` + `0_docs/ARCHITECTURE.md`。**
-> 用户会定期把这 4 份导入 ChatGPT 做项目背景更新；**Agent 每次有实质变动必须立刻同步更新它们（见 §8.5），不要让知识只留在聊天里。** 跨工具/跨机器（Cursor SSH、Claude Code、ChatGPT）一律以 `AGENTS.md` 为准；`CLAUDE.md` 是 Claude Code 的自动入口（内容指向本文件）。这些都随项目文件夹走，任何机器 SSH 到本目录即自动生效（`.cursor/rules/` 与 `AGENTS.md` 都在本文件夹内）。
+| 你想知道 | 看 |
+|:---|:---|
+| 现在做到哪、哪些作业在跑、下一步、截稿倒计时 | **`docs/STATUS.md`** |
+| 逐日发生了什么（最新在上） | `progress.md` |
+| ICASSP 论文方案（v2，四位专家评审后；§0.5 = 先导结果与主实验决定） | **`docs/PLAN_spiking_eegnex_icassp2027.md`** |
+| 之前跑过什么、哪个模型最强、哪些方向已证伪（3 队列 × 18 ANN） | **`docs/PRIOR_RESULTS.md`** |
+| WBCIC-SHU 3C 的权威数字与勘误 | `docs/RESULTS_TRUTH.md` |
+| 18 个 ANN 基线的协议与 27 条锁定决定（SNN 轮完全沿用） | `docs/PLAN_cross_subject_benchmark_and_fusion.md` |
+| ATCNet 消融 / 域对抗为什么结案 | `docs/ANALYSIS_atcnet_and_adversarial.md` |
+| 每个影响口径的决定（编号 D-xxx） | `docs/DECISIONS.md` |
+| 目录与代码分层、哪些代码是活的 | `docs/ARCHITECTURE.md` |
+| 投稿格式、截稿、ORCID、模板、检查单 | `docs/ICASSP2027_SUBMISSION.md`；**稿件底稿 = 根目录 `old_reference.tex`**（团队 2026 论文改的，D-033），样式文件与 `refs.bib` 在 `paper/` |
+| 复现命令（bench 与 SNN 轮） | `REPRODUCE.md`；换机 `SETUP.md` |
+| **换到 3090 / 新机器（给那边的 AI 执行）** | **根目录 `HANDOFF.md`** → `docs/handoff/` |
+| 发给学长的两份文档（09-18） | `docs/reports/` |
+| 跨被试协议的文献依据（6:2:2、seeds 41–45 的出处等） | `docs/CROSS_SUBJECT_PROTOCOL_MEMO.md`（7 个问题）→ `docs/CROSS_SUBJECT_PROTOCOL_RESEARCH.md`（全文，带置信度标签） |
 
-## 1. Project Identity
+## 1. 项目身份
 
 | 维度 | 内容 |
 |:---|:---|
-| 项目 | 多数据集运动想象 EEG 跨 session 泛化研究 |
-| 核心问题 | 跨 session MI-EEG 解码性能下降的根因是什么，如何修复？ |
-| 数据集 | WBCIC-SHU 2025 + SHU 2022 |
-| 任务 | 二分类运动想象：左手 vs 右手 |
-| 当前主线 | **端到端基础模型 × 跨被试（2026-08-04 学长重新定向）**：不做在线学习，直接用学长指定的 **5 个 S4 / DINO-DualCD 模型**在 WBCIC-SHU 与 SHU 上**分开**做端到端训练 + 跨被试评测。路线见根目录 `FOUNDATION_E2E_ROUTE_PLAN.md`。**融合已完成可运行；协议参数待学长确认；正式实验未跑，无任何结果数字。** |
-| 上一条主线 | **Phase 3 跨 session 修复（Oracle 先裁决 → T3A）= paused，不是废弃**。代码 `code/tta/` 与结果 `4_experiments/*/tta/` 全部保留；路线 `PHASE3_ROUTE_PLAN.md` 仍有效，等端到端 backbone 出来后可以接上去 |
-| SHU 并列线 | SHU 2022 **Phase 0/1/2a/2b/2c 全部完成**（2026-07-06 summarize + AI 分析补齐，与 WBCIC 齐平）。结论同质：无学习对齐不足、scatter 膨胀 / Fisher collapse、cosine>euclidean、FBCNet 弱；差异：SHU 近 chance（地板效应）、最佳对齐是 z-score 而非 BN-stats、prototype 信号更噪 |
-| 当前第一优先（2026-07-12，**pretrained-model-ready 工程态**） | **等待学长真实预训练模型接入**。已完成：Round-1 scaffold + mock live-inference 验证 + **WBCIC full A0 complete（4320/4320, max\|Δ\|=0）** + SHU no_tta replay smoke + 交接契约 `3_online_adaptation/PRETRAINED_MODEL_INTEGRATION_CONTRACT.md`。**不是** full T3A / 正式 Oracle 裁决；**真实预训练模型尚未接入**。下一步：新 adapter + checkpoint → preflight → live smoke → 再 Phase 3B Oracle。硬约束见 `PHASE3_ROUTE_PLAN.md` §2.5。 |
-| 长期方向 | 端到端基础模型跨被试基准 →（回接）Oracle 裁决 → (safe/reliability-weighted) T3A → prototype memory → online/test-then-update → agent/tool routing；Tent/SHOT/CoTTA 为梯度类对照 |
+| 目标 | **一篇 ICASSP 2027 论文**（4 页正文 + 可选第 5 页只放参考文献）。截稿 **2026-09-23 23:59 AoE = 北京时间 09-24 20:00**（官网 09-18 核对已从 09-16 延期到 09-23；此前记录称"不再延期"，未再核实；CMS Paper Kit 页面截至 09-18 仍写 09-16——投稿前登录 CMS 确认）。ICASSP 2027：2027-05-16~21，Toronto |
+| 题目方向（**候选，待学长拍板**） | 方案 v2 提议：**Spiking EEGNeX for cross-subject motor-imagery EEG**——把 EEGNeX 逐层脉冲化（时间原生编码：EEG 采样轴 = 脉冲时间轴），配无标签被试级对齐（EA + AdaBN），在 87 人 / 3 个队列上与 18 个强 ANN **逐被试配对**比较；建议的框架是「非劣性 + 对齐交互 + 能耗」（因为 Zhang et al., *Neural Networks* 2025 已发表 PLIF 跑在 1000 采样点 + EA，不能 claim 首创）。**选哪些实验、怎么立论、写不写这套框架，由学长决定；学长定之前 Agent 不写论文正文。** |
+| 学长指令（2026-09-17） | 「那个 eegnex 我看看能不能改一下 / 加点别的 / 再套到 snn 上」；「我们跑了几个数据集、对应跑了几个模型，梳理完开会」；「在 SYX 下新建 ICASSP，我们到这个里面做」。学长会自己改一版 EEGNeX；本仓库的 S-EEGNeX 是**并行版本**，**最终采用哪版由学长定**。学长的模型注册成一个 model entry 即进入同一张表、与所有条目逐被试配对 |
+| 数据集（3 个独立跨被试队列） | WBCIC-SHU 2C（51 人，58ch，左/右手）· SHU 2022（25 人，32ch）· WBCIC-SHU 3C（11 人，58ch，左/右/脚，LOSO）。2C 与 3C 是**互斥被试队列**（1–51 vs 52–62）。全部 250 Hz、0–4 s、1000 点 |
+| 环境 | conda `mi_torch_cu118`（Python 3.10，torch 2.7.1+cu118）；Slurm 分区 `gpu2node` / `gpu3node`，QOS 每用户 4 GPU / 48 h 一作业；登录节点不跑重活 |
+| 仓库 | 本目录 = git 仓库根。历史远端 `origin` = `git@github.com-stevencummings:stevencummings341-prog/EEG.git`（旧名自动重定向）。**可迁移远端** `icassp` = `https://github.com/yixiangsunLeo/ICASSP`（private；3090 克隆这个；`result.json` / 分析表经它同步）。未经用户授权不得 commit / push |
+| 血缘 | 本仓库就是 2026-06 起的 `eeg-mi-online`（跨 session → 跨被试 → benchmark → SNN），2026-09-18 迁到本路径并剪掉跨 session 时代的遗留（去向见 §10）。姊妹项目 `../Benchmark`（EEG 基础模型 benchmark，ICASSP 之后的主线） |
 
-> **架构升级（2026-06-11）**：所有结果区 + outputs + checkpoints 改为「数据集并列」：
-> `<结果区>/{wbci_shu,shu}/...`、`outputs/.../{wbci_shu,shu}/...`、`checkpoints/{wbci_shu,shu}/...`。
-> 每一层目录都有 README。checkpoint 命名规范见 `checkpoints/README.md`。
+## 2. 必须知道的已验证事实（浓缩版；数字与表在 `docs/PRIOR_RESULTS.md`、`docs/PLAN_spiking_eegnex_icassp2027.md` §0.5）
 
-## 2. Research Logic Chain
+1. **ANN 基线已齐**：18 个模型条目在 2C 与 SHU 上各 180 cell 全部完成（`results_snapshot_2026-09-13/experiments/{wbci_shu/wbci_2c_cross_subject_bench_v1, shu/shu_cross_subject_bench_v1}`），3C 上 7 模型 × 2 套配方（`docs/RESULTS_TRUTH.md`）。**EEGNeX 在三个队列都是第一或并列第一**（58 k 参数，GPU 时间是 ATCNet 的 1/4）。
+2. **瓶颈是被试偏移不是容量**：2C 前 8 名相差 1.0pp、被试间 SD ≈ 12pp；67 M 参数模型垫底；所有模型 train–test gap 15–33pp；3C sub-011 被试内也只有 34.7%（chance 33.3%）= BCI illiteracy。→ 模型比较必须**逐被试配对**。
+3. **已结案、不要再提的方向**：ATCNet×S4ERP 融合 A/B（显著更差）、ATCNet 三个消融（不显著）、域对抗（三条负证据）。
+4. **SNN 先导（SHU，split 41，120 cell，2026-09-18 完成）**：lr **1e-4** 优于 1e-3（= bench 配方）；对齐臂选 **EA + 逐通道 z-score（`eaz`）**（EA+标量 = 0，8–30 Hz 参考协方差 −1.3pp，EEG 专家的理论被数据否定）；D 版（T=4）比 EEGNeX −0.48pp（n.s.），S 版（时间原生）−1.38pp（p=0.04）；S 版能耗比 EEGNeX 低 **17×**、D 版 7×；编码器位置消融：模拟前端（`afe`）**更差** −1.82pp → 1-bit 编码放在 conv1 后成立；H1「对齐更帮 SNN」在 SHU 上**无支持**（交互 −0.5pp，p=0.35），由 2C 判。
+5. **旧 checkpoint / 逐 trial 预测已删**（2026-09-13 清理 41 G + 11 G），所以所有 ANN 参照（`eegnex`、`eegnet_official`）在 SNN 轮里**同折重跑**，不依赖旧权重。
+6. **SHU 2022 是地板效应**（chance band 51.4–53.7%，67/125 session 类别不平衡 → 主指标 balanced accuracy）；**2C 是唯一能检出 ~1–2pp 差异的确认队列**；3C 只有 11 人，LOSO。
+7. 所有 SNN 轮 config 的 `cross_subject` 块与 bench **逐字相同**（`kfold_subject` / 5 折 / 6:2:2 / `split_seeds [41, 42]` / `train.seeds [0]`），因此每个新条目都与 18 个 ANN 在相同 (split, fold, subject) 上配对。对比模型在 2C / SHU 另跑 seed 43（D-036）；3C 是 LOSO，不加第三个划分。
 
-```text
-Phase 0: Drift Diagnostic
-  -> 发现漂移主要是空间模式 + μ/β 频谱分布，不是幅值
+## 3. 硬边界
 
-Phase 1: Baseline
-  -> 发现跨 session drop 约 10pp
+1. 只在本仓库根目录内写文件；外部 raw 目录（`/share/workspace2/moto_imagination/{WBCIC_SHU,SHU}`）**只读**，禁止改名/删除/写入。
+2. 外部路径只出现在 `code/configs/paths.local.yaml`（gitignore；本集群只有这一份 local 文件——`code/configs/datasets/*.yaml` 是 `/CHANGE/ME` 占位，实验 YAML 用 `paths.local.yaml` 的逻辑键 `processed_manifest` / `shu_processed_manifest` / `wbci_3c_processed_manifest`）；Python / 实验 YAML 里不写绝对路径。
+3. **不编造结果**；未落盘（`result.json` 不存在）的东西只能写 planned / running，不能写 done。
+4. 不覆盖已完成的 `*_v1` 输出与 checkpoint；换配置必须换 `--out` / `run_id`（`cell_signature` 守卫会报错而不是静默续跑）。
+5. **不 `scancel` 正在跑或排队的作业**、不改动 `code/`、`scripts/slurm/`、`code/configs/experiments/snn_*.yaml`、`code/configs/paths.local.yaml`，除非用户明确要求——主实验作业（zs 臂：71021–71023、71030–71031、71034–71035、71230–71234；eaz 臂已按用户决定于 09-19 01:50 全部取消，D-035）与外部基线作业（71184–71185、71206–71225）正在依赖它们（清单 `logs/slurm/{snn_*,bl}_job_ids.txt`）。
+6. 不 commit / push，除非用户明确要求。例外：3090 机器按 `HANDOFF.md` Phase 12 用 `scripts/sync_results_git.sh` 提交 `result.json` 与分析表（禁止二进制、禁止 `paths.local.yaml`、禁止 force-push）。剪遗留已在 D-041 落地；仍不要 `git clean -fd` / `git push --force`。新克隆以 `yixiangsunLeo/ICASSP` 为准，不要再 clone 旧 `EEG.git` 当工作树。
+7. 登录节点不跑训练 / 预处理；分析脚本（`scripts/analyze_snn_round.py`、`scripts/summarize_cross_subject.py`）是 CPU 轻活，可在登录节点跑。
+8. 兼容软链接 `/share/home/yuan/SYX/eeg-mi-online -> ICASSP` 在主实验作业全部结束前**不得删除**（20 个作业的 `WorkDir` / `Command` / `StdOut` 写的是旧路径；3C manifest 已改为新路径，不再依赖软链接）。
 
-Phase 2a: Multi-source Baseline
-  -> 多源 ses-01+02 -> ses-03 优于最强单源
+## 4. 实验规则
 
-Phase 2b: No-learning Alignment Baseline
-  -> 统计对齐不够；BN-stats 只有小幅正收益，没人超过 +2pp
+1. 按**被试**划分，绝不按 trial 泄漏；验证集只从训练被试里切；测试被试的数据**不参与任何模型选择**（`e2e_trainer.py` 有守卫；`curves: false` 时连测试曲线都不打印）。
+2. 归一化 / 对齐只能是 per-trial fit-free 或**只用该 session 自身无标签 trial**（EA 逐 session 白化、AdaBN 用测试被试无标签 trial 重估 BN 统计量）；**无统计量跨被试**。EA / AdaBN 是 transductive-unsupervised，论文必须写明，并且 ANN 参照跑**同样的对齐臂**。
+3. **预注册家族（2C，Holm，α=0.05，5 项）**：H0-NI（S@hplif vs eegnex，未对齐，δ=1pp，单侧 bootstrap 下界）；~~**H1 = 唯一主检验**~~（差之差 Wilcoxon：S-EEGNeX-S@hplif，EA+AdaBN vs 无，accuracy，best-val，2C）——**本次投稿不跑 eaz 臂，H1 无数据、不写（D-035，用户 09-19 决定；论文 = zs 协议下的对比表 + 能耗）**；H2-NI（S vs D，δ=1pp）；H3（Page's L：LIF ≤ PLIF ≤ HetPLIF）；B1（S-EEGNeX vs S-EEGNet）。SHU / 3C 为复现队列（同 5 项，队列内 Holm）；其余全部标探索性。**不按测试集改主模型**（先导中二值读出 +0.5pp n.s.，仍保持预注册的 LI 读出）。
+4. **两块主表，绝不混比**：未对齐块（18 ANN + 未对齐 SNN，Friedman + Nemenyi CD，Bonferroni–Dunn 以 S-EEGNeX 为对照 k=19）；对齐块（{eegnex, eegnet_official, S-EEGNeX} × {无, EA, EA+AdaBN} = 3×3；H1 用其中 {EEGNeX, S-EEGNeX} × {无, EA+AdaBN} 的 2×2 子集做差之差）。**不把对齐后的 SNN 与未对齐的旧 ANN 直接比。**
+5. 检验实现：n ≤ 50 精确 Wilcoxon、n = 51 置换；Hodges–Lehmann 中位差 + BCa bootstrap CI；报 n_eff、胜/平/负；覆盖断言 `n_cells == n_folds × n_splits`；跨模型比较只在同一 `run_id`（同划分）内。
+6. 配方 = bench 配方：Adam 1e-4 / batch 128 / 无 scheduler / max 500 / patience 25 / monitor macro-F1 / 单训练 seed 0 / 划分 seed 41+42。**对比模型**在 2C / SHU 上另加划分 seed 43（D-036）；**3C 保持 LOSO（split_seed 0），不加 43**。SNN 本轮不加 43。单训练 seed 写进 limitation（预算允许给 2C 主 2×2 补 2 个 seed）。
+7. 能耗口径：逐层 dense MACs × 实测发放率（45 nm：MAC 4.6 pJ / AC 0.9 pJ），以 **EEGNet ANN 与 S-EEGNet 为参照**（「EEGNeX 的精度、~2× EEGNet 的能耗、比 EEGNeX 低 17×」），乘数**不进标题和摘要**。
+8. 每个 cell 记录 seed、split、模型 YAML、配方、git commit、环境指纹、硬件；每 cell 只存 `best.pt` + `last.pt`，可断点续跑，`result.json` 为完成标记。
+9. 先 smoke 再 full；同一条提交命令重复执行 = 断点续跑（完成的 cell 跳过），永远安全。
 
-Phase 2c: Prototype Drift Analysis（done, 两数据集）
-  -> 全量跑完（WBCIC 4320 / SHU 7500 cells 全 ok）。prototype drift 显著但中等（多元 R²≈0.35）；
-     机制 = within-class scatter 膨胀 / Fisher collapse（4.58→1.57），非 centroid collapse；
-     cosine 几何优于 euclidean；EEGNet/DeepConvNet 清晰、FBCNet 弱。
-  -> 判定 qualified go：转向基于原型的测试时适应。
+## 5. 目录路由
 
-Phase 3: 跨 session 修复 —— Oracle 先裁决，再看 T3A（planned — 当前主线，路线 v2）
-  -> 依据 Phase 2c 权威结论：prototype drift 只解释部分掉点，主机制是 within-class scatter 膨胀 /
-     Fisher collapse。故不能直接大规模上 T3A，必须先做 Oracle 上限裁决。
-  -> A0 replay + No-TTA 精确复现（|Δ|<1e-6）-> A1 minimal T3A smoke（只证 pipeline）
-     -> B ⭐Oracle 上限裁决门⭐（source_proto/target_label/cosine/mahalanobis/shrinkage/reliability-weighted）
-        · Oracle >+3pp -> C T3A ablation -> D safe-T3A -> E 全量 -> (F Tent/SHOT/CoTTA 对照) -> G 论文叙事
-        · Oracle <+1pp -> 停大规模 T3A，转 scatter/reliability/decision-boundary 机制（论文路线 3）
-  -> 参考 arXiv:2604.16926v1 (NeuroAdapt-Bench)：Tent/SHOT/T3A 中只有 T3A(无优化、原型+熵筛选)最稳/唯一
-     平均正增益，梯度类常负迁移。T3A = "用 target 特征重估 class prototype 无标签调整分类几何"。
-  -> 复用 Phase 2c 已存嵌入，Oracle + T3A 全程离线 CPU 可跑（无需重训/GPU）。
-  -> 铁律：backbone 是自训小模型非论文基础模型；跨 session 非跨数据集；二分类熵≡最大置信度(退化)，
-     真正 ablation 轴是 filter_k/几何/软硬/margin；T3A 只作 baseline，未裁决前不写"最终修复方案"。
-     详见根目录 PHASE3_ROUTE_PLAN.md 与 3_online_adaptation/PHASE3_TTA_DESIGN.md。
-
-Phase 4+: Memory / Online test-then-update / Agent
- -> future；必须由前面实验结果支撑，不为了 Agent 而 Agent
-
-━━━ 2026-08-04 学长重新定向：新增并列主线（不推翻上面的链，Phase 3 转 paused）━━━
-
-E2E: 端到端基础模型 × 跨被试（当前主线）
- -> 学长指令：「先简化任务，先不搞在线学习，先直接搞端到端的模型」
- -> 5 个模型（S4ERP + UnifiedDINODualCD_{S4_Pos,S4_Timepatch,S4_Flatten,Transformer}）
-   · 来源 = 学长交付的 `models_eeg_foundation/` 包，已移植进 `code/models/eeg_foundation/`
- -> 泛化轴从「跨 session」换成「跨被试 subject-independent」；两数据集**分开训练不合并**
- -> **WBCIC 3C（11 人）已对齐 DSGNet 论文协议（2026-08-07）**：LOSO；非测试被试
-   ses-01+02 train / ses-03 val；测试被试三 session 全测（`val_mode=sessions`）。
-   run_id=`foundation_3c_loso_paper_v1`。对标论文 Table II：DSGNet Acc **0.6856** /
-   F1 0.6833 / Kappa 0.5284（doi:10.1109/jbhi.2026.3689121）。旧
-   `foundation_3c_loso_v1`（留 2 个 val 被试）与论文不一致，不作对比。
- -> 硬要求：每 cell 只存 best + last 两个 checkpoint；必须支持断点续跑（已实现）
- -> 权威路线 = 根目录 `FOUNDATION_E2E_ROUTE_PLAN.md`
-   · 协议讨论备忘 = `4_experiments/CROSS_SUBJECT_PROTOCOL_MEMO.md`
-   · 论文 PDF = `inbox/papers/dsgnet_jbhi2026_FullText.pdf`
-```
-
-**铁律**：每一步都必须有上一步结果支撑。未运行的内容只能写 future / planned，绝不能写 done。
-
-## 3. Current Verified Facts
-
-- WBCIC-SHU / SHU 路径由本机 `code/configs/paths.local.yaml`（及 `datasets/*.local.yaml`）配置；仓库内只有 `/CHANGE/ME` 占位。实验 config 用逻辑键 `processed_manifest` / `shu_processed_manifest`。
-- 原集群（历史事实）WBCIC processed entry 曾位于：
-  `/share/workspace2/moto_imagination/WBCIC_SHU/processed/eog_ecg_clean/processed_manifest.csv`
-- WBCIC usable sessions: 148 ok / 5 failed.
-- WBCIC tensor convention: `X [trials, 58, 1000]`, `y [trials]`, labels normalized to `{0,1}`.
-- SHU 2022 raw / processed（历史事实，原集群）：
-  `/share/workspace2/moto_imagination/SHU` 与 `.../processed/npz_clean/processed_manifest.csv`
-  - 入口=作者发布的 per-session `.mat`（已带通/陷波/4s 切段），仅做标签归一化 {1,2}->{0,1} 转存 `.npz`，不再二次预处理。
-  - 125 session 全 ok / 25 subjects。tensor: `X [trials, 32, 1000]`, `y [trials]∈{0,1}`。
-  - 生成脚本：`scripts/preprocess_shu.py`（核心 `code/preprocessing/shu_mat.py`）。
-- runner 数据集无关：manifest 由 `code.utils.paths.resolve_manifest_path` 解耦（逻辑键或路径），优先 `paths.local.yaml`。
-- 输出/权重按数据集作用域：`outputs/.../{wbci_shu,shu}/<run_id>/`、`checkpoints/{wbci_shu,shu}/<run_id>/`。
-- Completed result: no-learning alignment is insufficient; best BN-stat gain is small and below +2pp.
-- **SHU 结果（2026-07-06 全部完成）**：P1 within/cross(5-seed) EEGNet 0.611/0.538、DeepConvNet 0.606/0.536、FBCNet 0.553/0.508（cross 近 chance）；P2a ses01+02→03 EEGNet 0.544/DeepConvNet 0.558/FBCNet 0.512；P2b 无对齐 0.5274、最佳 session_zscore +1.42pp、无方法过 +2pp；P2c scatter 15.7→38.3(+144%)/Fisher 1.96→0.79(−60%)、fisher_change ρ=0.43、cosine>euclidean、FBCNet 弱。可读区 `2_baseline/shu/{no_alignment_baseline,alignment_baseline}/`、`4_experiments/shu/prototype_drift/`，各含 AI_ANALYSIS.md。
-- **2026-07-06 修复**：① `prototype_drift_summarize.summarize_from_cfg` 读 `data.manifest`（原 `data.manifest_path`，SHU 会误用 WBCIC 网格）；② 新增 `scripts/make_baseline_cross_all.py` 适配 Phase 2b `baseline_cross_all` 的 schema（accuracy/train_session → acc/train_sessions + training_scope）。
-- **Phase 3 route（planned，当前主线，v2 = Oracle 先裁决）**：跨 session 修复。权威路线文件
-  = 根目录 `PHASE3_ROUTE_PLAN.md`（待审批的完整路线）+ `3_online_adaptation/PHASE3_TTA_DESIGN.md`（技术总纲）。
-  依据 Phase 2c（主机制=scatter 膨胀，非 centroid collapse），**Oracle 上限裁决门提前到 T3A 大扫之前**：
-  A0 replay+No-TTA 精确复现 → A1 minimal T3A smoke → **B Oracle 裁决（>+3pp 才扩大 T3A，<+1pp 转 scatter/reliability）**
-  → C ablation → D safe-T3A → E 全量 → F Tent/SHOT/CoTTA → G 叙事。参考 arXiv:2604.16926v1（NeuroAdapt-Bench，
-  T3A 最稳/唯一平均正增益）。复用 Phase 2c 已存嵌入，离线 CPU 可跑。config 骨架
-  `code/configs/experiments/{phase3_tta,shu_phase3_tta}.yaml`（runner `phase3_tta` 待实现 = Phase A0）。
-  **⚠ 已知 bug**：WBCIC `embed_index__*.csv` 的 `npz_path` 列是失效旧路径（缺 `wbci_shu/`），Phase 3 runner
-  须用 config `source_embeddings.embeddings_dir` 重拼路径，不信任该列。
-- **端到端基础模型主线（2026-08-04 融合完成，可运行；未跑实验）**：
- - 5 个模型已在 `code/models/eeg_foundation/`（学长包移植，模型数学未改；4 处小改动记于该目录
- README §4），经 `code/models/registry.py` 按名构建，共享 `{logits, features, confidence}` 契约。
- - **实测**参数量（`n_times=1000`, 2 类）@58ch / @32ch：`s4erp` 1.37M / 0.94M、
- `dualcd_s4_pos` 3.17M / 2.32M、`dualcd_s4_timepatch` 4.48M / 3.63M、
- `dualcd_s4_flatten` 66.9M / 66.0M、`dualcd_transformer` 67.9M / 67.0M；
- `patch_num=(1000-28)//2+1=487`，flatten 变体的参数几乎全在 DINO projection head。
- 对照学长表格（906K/1.99M/3.30M/65.8M/66.8M）：flatten 两个 + Transformer 在 32ch 下吻合 0.4% 以内；
- `dualcd_s4_pos`/`timepatch` 实测高 10–16%（学长那两行疑似按 ERP 配置 C=21/T=170 量的）。**以实测为准。**
- - 新训练器 `code/training/e2e_trainer.py`：非 CE 损失钩子 + **每 cell 只存 `best.pt`/`last.pt`** +
- **断点续跑**（optimizer/scheduler/RNG/history 存 `last.pt`，原子写入，`result.json` 为完成标记，
- `cell_signature` 守卫——换了划分/超参却复用输出目录会报错而不是悄悄续跑）。
- `code/training/trainer.py` 保持冻结，Phase 0–2c 结果可复现。
- - 新协议 `code/experiments/cross_subject_protocols.py`：被试级 `loso` / `kfold_subject` / `holdout`，
-   `val_mode`=`subjects`/`trials`/`sessions`（3C 论文对齐用 sessions：train ses1–2 / val ses3）；
-   验证集默认取留出的训练被试；per-trial z-score；best 与 last 双 checkpoint 评测。
-   runner = `PHASE_RUNNERS["foundation_cross_subject"]`。
- - config：`code/configs/experiments/{foundation_cross_subject,shu_foundation_cross_subject,
-   foundation_cross_subject_wbci_3c}.yaml` + 5 个 model YAML。
- - **3C 对标（2026-08-07）**：DSGNet（JBHI 2026）SHUv5 Acc/F1/Kappa = 0.6856/0.6833/0.5284；
-   本仓跑 `foundation_3c_loso_paper_v1`；DSGNet 复现仍 deferred。
- - **统一对比 run（2026-08-10，运行中）**：`paper_baseline_3c_821_v1` = 7 模型同 run
-   （4 个已发表 baseline **只用作者官方代码** + 我们 3 个）× **8:2:1 跨被试** × **论文 recipe**
-   （Adam 1e-4/batch 128/max 500ep）+ 早停 + **per-epoch train/val/test 三曲线**。
-   · baseline 硬规矩：**只认原作者官方仓库**，无完整官方代码就排除并写明理由
-     （已排除 EEG-Inception [27] / MDGEEG [35] / EEG-DG [38] / DSGNet）——见
-     `code/models/paper_baselines/README.md`。
-   · 三曲线铁律：**test 只做可视化，绝不参与模型选择**（守卫在 `e2e_trainer.py`）。
-   · 大模型用 `train.micro_batch_per_model` 做梯度累积保持等效 batch，勿改成直接降 batch。
-   · 汇总 `scripts/summarize_cross_subject.py`；绘图 `scripts/plot_three_curves.py`。
-- **SHU 2022 两个新实验（2026-08-16 学长确认，运行中）**：数据换到 SHU 2022（25 被试 ×
-  5 session × 32ch，125 session 全 ok），**7 个模型**（`eegnet_official`/`eegnex`/`eeg_deformer`/
-  `atcnet`/`deepconvnet`/`fbcnet`/`s4erp`；自研 `eegnet` 不跑）。
-  · **实验一 cross-session** `shu_cross_session_3to2.yaml`：每被试 ses-01+02+03 → ses-04+05，
-    SHU 2022 论文 recipe（Adam 1e-3/batch 16/NLLLoss/早停看 val accuracy/**不归一化**），
-    **两处偏离**：3 session 训练（论文只用 ses-01）+ 300 epoch（论文 1500）。
-    **⚠ 因此与论文 CS 53.7% 不可比，不得写成「超过论文」。**
-  · **实验二 cross-subject** `shu_cross_subject_5fold.yaml`：5 折 **16:4:5** 被试
-    （8:2:1 在 25 人 5 折下数学上不可能：test=5 需要 40:10:5 共 55 人），`split_seeds`
-    **41–45 只换划分**、训练种子固定 0；821 recipe + **patience 25**（821 是 100）+
-    **monitor accuracy**（821 是 macro_f1），**故与 `paper_baseline_3c_821_v1` 不可横比**。
-  · **⚠ patience=25 风险**：821 实测 atcnet best_epoch 中位 **406**、eegnet_official 到 486，
-    patience 25 很可能砍掉它们的最优点；弱结果要按「欠训练」解读，不是模型差。
-  · 新协议 `code/experiments/cross_session_e2e_protocols.py`（runner `cross_session_e2e`），
-    每被试一个 cell、走 `e2e_trainer`（续跑 + best/last + 三曲线）；跨被试新增 `split_seeds`
-    扫描，cell 名 `<model>__split<ss>__fold<k>__seed<s>`（单划分时保持旧名，821 产物不受影响）。
-  · 提交：`bash scripts/slurm/submit_shu2022.sh`（7 模型分 3 组 → 3 卡，实验二用 `afterany`
-    挂在实验一后）。gpu2node 满时按 `scontrol update jobid=<id> partition=gpu3node` 搬。
-  · 协议依据见 `inbox/cross_subject_protocol_research.md` §2.3（2026-08-16 已对 PMC 原文逐句核过）。
-- **跨被试 benchmark + ATCNet×S4ERP 融合（2026-08-27 起的当前主线，P0 完成、未跑 GPU）**：
-  权威计划 `docs/PLAN_cross_subject_benchmark_and_fusion.md`；复现 `REPRODUCE.md`；
-  逐条记录见 `progress.md` 2026-08-27 条目。硬事实：
-  - **域对抗结案，不要再提**：S4ERP-Adv 论文配方 **+0.28pp**（我们配方 +2.92pp，即通用正则）、
-    ATCNet-Adv **−4.22pp**（11 折全）、λ 0.1→2.0 差异 0.56pp。`s4erp_adv`/`atcnet_adv`/
-    `dualcd_s4_pos`/`eegnet`(自研)/`cap_eegnet` 全部**弃用但保留代码**
-    （`registry.DEPRECATED_MODELS`、`adapter.DEPRECATED_VARIANTS`，构建时 WARNING）——
-    删代码会让 `RESULTS_TRUTH` 引用的数字不可复现。
-  - **难被试是"没信号"不是"迁移失败"**：`wbci_3c_within_ceiling_v1` 实测 sub-011 被试内
-    仅 34.7%/37.6%（chance 33.3%）。⚠ 但该实验**数据饥饿**（每 cell 仅 192 训练 trial），
-    4 个被试的跨被试成绩反超它，**不能当可解码性上界引用**。
-  - **数据集**：本轮用 **WBCIC-SHU 2C（51 被试，从未做过跨被试，完美类别平衡）** + SHU 2022；
-    **3C 本轮不用**。**2C 与 3C 是互斥队列**（subjects 1–51 vs 52–62，Yang et al. Sci Data
-    12:488 2025 + MOABB `Yang2025`），**不是子集**；Figshare 写的 "52 subjects" 是错的，以 51 为准。
-  - **seeds 41–45 出处 = ERP-Benchmark（arXiv:2601.00573）**，原文即用于被试划分；
-    该文同时是指标口径（Acc/F1/AUROC）、6:2:2 划分比、以及**学长 S4/DINO 包**的源头。
-  - 协议：两数据集均 `kfold_subject` / 5 折 / **6:2:2** / `split_seeds:[41,42]` /
-    `train.seeds:[0]`；配方 Adam 1e-4 / batch 128 / 无 scheduler / max 500 /
-    **patience 25** / `monitor: macro_f1`。**18 个条目一次提交**（约 469 GPU-h ≈ 4.9 天/4 卡）。
-  - 新增能力：**模型别名 `name@variant`**（`code/models/model_specs.py`，参数单一来源
-    `defaults`/`per_dataset`/`variants`）；**`cell_signature` v2**（`_stopping_identity`：
-    patience 总是进签名，`max_epochs` 仅在 scheduler 非 none 时进）；每 cell 写
-    **`predictions.npz`**（per-trial）；Cohen's Kappa；`failures.json` + 环境指纹；
-    `scripts/slurm/submit_bench.sh`（4 卡分组 + **48h 自动重投链**）；
-    `code/summaries/cross_subject_bench.py`（配对 Wilcoxon+Holm / Cohen's d_z /
-    Friedman+Nemenyi CD 图 / **按 val 选变体** / 跨数据集主表）。
-  - **两个融合方向**（实测 58ch/2 类）：`s4erp_dw@{f64d2,f16d8,f16d2p}` = 学长指定的
-    "空间滤波用 ATCNet 的"，dense 950,400 → depthwise 25,984/24,736/6,592，全模型
-    1,370,882 → 426,370/425,122/406,978；`atcnet_s4` = 共享因果 SSM 替 5 个 TCN，
-    114,554 → **27,834**（小 4.12 倍，含 `s4_d_ff=32` 通道混合），`readout_idx=[12..16]`，
-    **`log_dt` 必须按 Tc 重初始化**（默认 6.8–546 步会退化成滑动平均）。两者**互补**。
-  - ⚠ **`s4erp` 的 "S4" 名不符实**：`s4_layers.py` 只用 `diag(A)`，是对角 SSM（S4D 类），
-    **不能引用 Gu et al. 2022 作为实现依据**；真 DPLR 对比延后到 P4。
-- Future work: prototype memory, online test-then-update, full CAP-EEGNet,
- 集成真实 EEG 基础模型 (CBraMod/REVE/TFM-Tokenizer) 跑 TTA。
-
-## 4. Hard Scope
-
-1. Write only inside **this repository's project root** (wherever it is cloned) unless the user explicitly says otherwise. 换机入口见根目录 `SETUP.md`。
-2. Treat external RAW trees configured in `paths.local.yaml` / dataset `*.local.yaml` as read-only（sourcedata/derivatives / raw EDF/MAT）。禁止改名/删除/写入 raw。
-3. 唯一允许写外部盘的位置是各数据集的 `processed/` 子树（预处理 npz+manifest 输出），且必须由本机 local 配置显式指向。其余外部数据路径只读。
-4. Do not overwrite completed `*_v1` outputs/checkpoints.
-5. Do not commit filled `*.local.yaml`（本机路径）；Git 只保留 `*.example.yaml` 与占位 `paths.yaml` / dataset yaml。
-
-## 5. Directory Routing
-
-| 目录 | 内容 | 规则 |
+| 路径 | 放什么 | 规则 |
 |:---|:---|:---|
-| `0_docs/` | 文档中心：ARCHITECTURE / STATUS / FILE_CATALOG / operation_log | 新文档必须同步 `FILE_CATALOG.md` |
-| `1_session_drift/{wbci_shu,shu}/` | Phase 0 漂移诊断真实结果（报告+CSV+图） | 数据集并列；已完成结果只读，复跑必须新 run_id |
-| `2_baseline/{wbci_shu,shu}/` | Phase 1 baseline + 2a multi-source + 2b alignment 真实结果 | 下分 no_alignment_baseline/ + alignment_baseline/；只读，禁止覆盖 |
-| `3_online_adaptation/{wbci_shu,shu}/` | online/adaptation 设计区 | future，不写成已验证 |
-| `4_experiments/{wbci_shu,shu}/` | Phase 2c+ 新实验入口 | 每个实验一个子目录 + README |
-| `5_papers/{wbci_shu,shu}/` | 论文、PPT、图表材料 | 不放 raw EEG / checkpoint |
+| `code/` | 训练框架（唯一人工入口 `python code/run.py --config ...`）；`code/models/spiking/` = 本轮新模型；`code/configs/experiments/snn_*.yaml` = 本轮 24 个网格配置（主实验用 6 个）。2026-09-18 已按主实验命令的 import 闭包剪枝（D-031），剩下的文件都在闭包内或被保留脚本/测试引用 | 分层见 `docs/ARCHITECTURE.md`；**主实验期间不动**（闭包内文件在作业启动时才被读取） |
+| `scripts/` | `make_snn_configs.py`（生成 snn 配置）、`analyze_snn_round.py`（预注册检验 + H1 + 能耗 + 与 bench 配对；臂映射 `--aligned-arm`）、`summarize_cross_subject.py`、`plot_three_curves.py`、预处理入口；`scripts/slurm/{_common.sh, bench_gpu.sbatch, submit_snn.sh, submit_bench.sh, shu_gpu.sbatch, shu_cpu.sbatch}` | 能进 `code/` 的功能不留在 scripts；主实验期间**允许**在 `scripts/` 根下新增分析/画图脚本（不在作业闭包内），`scripts/slurm/` 不动 |
+| `tests/` | pytest（剪枝后 106 项 + 1 skip；`tests/models/test_spiking.py` 13 项） | 新模型 / 新协议必带测试 |
+| `outputs/experiments/{shu,wbci_shu}/snn_*_v1/` | 本轮 run 产物（`cells/**/result.json`、`failures__*.json`、`resolved_model_params__*.json`） | 只读；复跑用新 run_id |
+| `outputs/analysis/snn_round/<dataset>/` | `analyze_snn_round.py` 的表（`REPORT.md`, `per_model.csv`, `paired_tests.csv`, `interaction_H1.csv`, `energy.csv`, `subject_matrix.csv`） | 表由脚本生成，禁止手改 |
+| `outputs/processed/wbci_shu_3c_mat_clean/` | 3C processed 数据（2.0 G，作业 70221 重生成） | 3C 作业依赖；不删 |
+| `checkpoints/{shu,wbci_shu}/<run_id>/<cell>/{best,last}.pt` | 权重 | 不删；不重复复制 |
+| `logs/slurm/` | `<job>-<id>.out/.err`、`sacct_*.txt`、`snn_<tag>_job_ids.txt` | 作业清单在这里 |
+| `results_snapshot_2026-09-13/` | **只读归档**：18 ANN bench。git 只跟踪 `README` + `tables/` + `cells/*/result.json`（给 `--bench`）；predictions / 曲线仍在盘上 | 不改 cells 内容 |
+| `HANDOFF.md`、`docs/handoff/` | 给 3090 / 新机器 AI 的执行手册 | 换机步骤变了才改 |
+| `docs/` | 方案、状态、决定、先前结果、架构、投稿说明、`reports/`（给学长）、`history/`（会话摘录） | 见 §8 |
+| `paper/` | ICASSP 2027 官方模板（`spconf.sty`, `IEEEbib.bst`）、`refs.bib`、`figures/`、`tables/`、早期骨架 `main.tex`；**稿件底稿本身是根目录 `old_reference.tex`**（用户放置，D-033），其三张队列表由 `scripts/build_dataset_tables.py --splice` 生成 | 数字只能来自 `outputs/analysis/**/*.csv`；见 §7 |
 
-> 上述每个结果区都是 `wbci_shu/` 与 `shu/` 并列，且每一层目录（含 report/tables/figures）都有 README。
-> README 骨架可用 `scripts/scaffold_readmes.py` 重新生成。
-| `code/` | 代码框架 | 人工入口只用 `code/run.py` |
-| `inbox/` | 临时交接材料 | 读完后归档并更新索引 |
-| `backup/root_archive_2026-06-10/` | 清理前的旧代码/文档/产物/权重/日志 | 保留追溯；根目录不再放旧层；阶段目录的可读结果即从这里复制 |
-| `backup/legacy_snapshot_2026-06-10/` | 更早的轻量快照 | 历史追溯 |
+## 6. 代码规则
 
-## 6. Code Architecture Rule
+- 人工入口只有 `python code/run.py --config code/configs/experiments/<name>.yaml [--models a,b@variant --split-seeds 41 --tag-suffix X --device cuda]`；GPU 走 `scripts/slurm/submit_snn.sh <config> <tag> "<group1>" ["<group2>"...] [-- extra]`（每组一卡，`N_LINKS` 个 48 h 接力）。
+- 模型别名 `name@variant`（`code/models/model_specs.py`：`defaults` / `per_dataset` / `variants` 单一来源）；未定义别名一律抛错。本轮条目：`eegnex`, `eegnet_official`, `seegnex@{hplif, s_lif, s_plif, s_hplif, s_hplif_afe, s_hplif_spk, s_hplif_noinit, s_hplif_causal, s_hplif_hard, s_hplif_noreg, s_hplif_all}`, `seegnet@plif`；**外部基线轮（D-034）**：`tcformer`, `labram`, `eegpt`, `cbramod`（`code/models/external/`，registry 懒加载；`per_dataset` 只放 `channel_set`；权重在 `weights/`，协议 `docs/PROTOCOL_external_baselines.md`），3C 另补 `atcnet`, `eeg_deformer`, `fbcnet`；**AdaHGNN（D-037 / D-038 / D-040）**：`adahgnn`（未改的 `EEG_AdaMSHyper`，注册但不跑）、**`adahgnn@mi` / `adahgnn@mi_mix`（AdaHGNN-MI，学长模型的 MI 适配，`code/models/external/adahgnn/mi_model.py`；无预训练权重；协议同 D-034 zs；论文行按验证集 macro-F1 选臂）**。
+- 模型特有训练行为走 hook（`uses_custom_loss` / `training_step` / `after_optimizer_step`），不 fork trainer。`code/training/trainer.py` **冻结**；新能力进 `e2e_trainer.py`。所有模型共享 `{logits, features, confidence}` 契约；SNN 额外 `describe()`（参数 / τ / 能耗）与 `pop_spike_stats()`。
+- 加模型 → `code/models/<name>/` + `code/configs/models/<name>.yaml` + `registry.py` 注册 + 测试；加实验 → `scripts/make_snn_configs.py` 生成（不要手写那 24 份 YAML）。
+- 弃用模型（`s4erp_adv`, `atcnet_adv`, `dualcd_s4_pos`, `eegnet`(自研), `cap_eegnet`）目前仍在 `registry.py` 的模块级 import 里（= 作业 import 闭包内），**作业结束后**连同 yaml 与相关测试一起删除；它们产出的数字都保存在 `results_snapshot_2026-09-13/` 的 `result.json` + `resolved_config.yaml` 中，不依赖代码存活。
 
-Human-facing entry is:
+## 7. 论文规则
 
-```bash
-python code/run.py --config code/configs/experiments/<phase>.yaml
-```
+0. **先决条件：论文题目、框架、进论文的实验清单由学长决定。** 学长拍板前 `paper/main.tex` 只维护格式骨架与空表格，Agent 不写摘要 / 正文 / 贡献，不替学长挑实验。下面 1–5 条是拍板之后写作时的约束。
+1. 稿件底稿是根目录 `old_reference.tex`（团队 ICASSP 2026 论文按 2027 kit 对齐；`paper/main.tex` 为早期骨架），用官方 `spconf.sty`（`paper/README.md` 有编译说明）。**4 页正文（含图、可含参考文献）+ 可选第 5 页只放参考文献 / 资助 / 伦理合规声明**；PDF ≤ 5 MB；文件名 = 第一作者姓 `.pdf`；单盲（publish-ready，署名）；**每位作者需 ORCID**；IEEE 要求**在致谢中披露 AI 生成内容的使用**（编辑 / 语法润色除外）。
+2. 每个数字都要能指回 `outputs/analysis/snn_round/<dataset>/*.csv` 或 `results_snapshot_2026-09-13/**/tables/*.csv` 的一行；表格由脚本生成后再排版，不手算。
+3. 框架以学长拍板为准（方案 v2 的建议是「非劣性 + 对齐交互 + 能耗」，仅供参考）；无论哪种框架，必须引用并明确对比：Zhang et al. 2025 (*Neural Networks*, Wu 组, PLIF+EA)、NiSNN-A (TNNLS 2025)、HR-SNN (TCDS 2024)、LENet / SRIF（转换法）、Yin–Corradi–Bohté 2021、Perez-Nieves 2021（异质 τ）、PLIF (Fang, ICCV 2021)、He & Wu 2020 (EA)、Junqueira 2024、Wimpff 2024、Horowitz 2014 + Dampfhoffer 2023（能耗口径）、EEGNeX (Chen 2024)、EEGNet (Lawhern 2018)、ATCNet、EEG-Deformer、数据集论文（Yang 2025 *Sci Data*；Ma 2022；DSGNet JBHI 2026 用作 3C 对标）。
+4. 被删除、不得再写的表述：「posterior drift」、「anytime / streaming」（改「sample-synchronous，'same' 填充 look-ahead ≤ 128 ms」）、「LIF = 包络检测器」（改「LIF₁ 在阈值处整流 → conv2 平滑 → 包络估计」）、「1-bit 编码保相位所以空间滤波可行」（是假设，由 `afe` 消融支持）、「20× 能耗」进标题。
+5. limitation 必写：transductive 对齐、单训练 seed / 共享初始化、配方依赖、SHU 地板效应、S 版 launch-bound 慢 3×。
 
-Layering:
+## 8. 文档纪律（只维护这几份活文档）
 
-- Add dataset -> `code/datasets/<name>.py` + `code/configs/datasets/<name>.yaml`.
-- Add model -> `code/models/<name>.py` + `code/configs/models/<name>.yaml`.
-- Add method -> `code/methods/<name>.py`.
-- Add experiment -> `code/experiments/<name>.py` + `code/configs/experiments/<phase>.yaml`.
-- Every new file -> update nearest `README.md` + `0_docs/FILE_CATALOG.md`.
-- Model-specific training behaviour goes into **optional model hooks**
-  (`uses_custom_loss` / `training_step` / `after_optimizer_step`), never into a fork of the
-  shared trainer. `code/training/trainer.py` is frozen (Phase 0-2c reproducibility);
-  new training capability goes into `code/training/e2e_trainer.py`.
+| 文档 | 何时改 |
+|:---|:---|
+| `AGENTS.md` | **规则 / 契约 / 长期事实**变了才改；不记状态数字 |
+| `docs/STATUS.md` | 作业状态、完成 cell 数、下一步、截稿倒计时变了就改（每次会话结束前更新一次） |
+| `progress.md` | 每次实质动作追加一条（最新在上，含日期时刻） |
+| `docs/DECISIONS.md` | 每个影响结果口径的决定：编号、背景、决定、后果 |
+| `docs/PLAN_spiking_eegnex_icassp2027.md` | 方案变了改；§0.5 记先导 / 主实验结论 |
 
-Current run capability:
+其余 `docs/*.md` 是参考卡片。**不再维护** FILE_CATALOG / operation_log 之类的镜像文档——目录变化看 `git status`。根目录与 `docs/` 下 Markdown 带 YAML frontmatter；文件名无空格、snake_case；CSV 表头英文 snake_case。报告结构：核心结论 → 目标 → 方法 → 协议 → 结果 → 分析 → 与前序关系 → 下一步 → 文件清单。
 
-- `code/run.py` is the new entry and is fully runnable in-process via `code/runners.py` (no dependency on the archived `scripts/`).
-- Phase 0/1/2a/2b/2c runners are implemented in `code/runners.py`; summarizers + canonical 9-section report in `code/summaries/`.
-- **`foundation_cross_subject` runner（端到端主线，2026-08-04）**：5 个 S4/DINO-DualCD 模型 ×
-  跨被试；两数据集分开跑。
-  `python code/run.py --config code/configs/experiments/{foundation_cross_subject,shu_foundation_cross_subject}.yaml --device cuda`。
-  额外 CLI：`--split-protocol {loso,kfold_subject,holdout}` / `--folds` / `--folds-subset` /
-  `--monitor` / `--no-resume`。**重复执行同一条命令即为断点续跑**（完成的 cell 跳过，中断的 cell
-  从 `last.pt` 续）。尚无 `--summarize` 支持（summarizer 待写）。
-- Train: `python code/run.py --config code/configs/experiments/<phase>.yaml [...]`.
-- SHU configs（同一批 runner，仅数据/路径不同）：`code/configs/experiments/shu_phase{0_drift_diagnostic,1_baseline,2b_alignment,2c_prototype_drift}.yaml`。
-  例：`python code/run.py --config code/configs/experiments/shu_phase1_baseline.yaml --device cuda`。
-- 切换数据集只改 config（`data.name` + `data.manifest` + 输出路径前缀），不改 runner 代码。
-- checkpoint 命名规范（数据集/实验/方法/模型/任务前缀/被试/session/seed）见 `checkpoints/README.md`。
-- Summarize: `python code/run.py --summarize --config code/configs/experiments/<phase>.yaml` → tables/figures/native report + canonical `REPORT.md`.
-- Verified: Phase 0 drift + Phase 1 EEGNet training (CPU smoke); Phase 2b summarize on archived 30150-row run CSVs (canonical report numbers match history).
-- Old `src/scripts/configs` remain archived in `backup/root_archive_2026-06-10/` for reference only.
-- Canonical reports MUST follow the 9-section structure in §8 (Core conclusion → Goal → Method → Protocol → Results → Analysis → Relationship to previous phases → Next step → File list).
+## 9. Slurm 运行纪律
 
-## 6.5 Reporting Workflow (two layers)
+- 提交前 `DRY_RUN=1` 看命令；`squeue -u $USER -o '%.10i %.14j %.2t %.11M %R'` 看状态；`gpu2node` 满时对 **PENDING** 作业 `scontrol update jobid=<id> partition=gpu3node`（一次只能一个分区）。
+- 进度：`find outputs/experiments/<ds>/<run_id>/cells -name result.json | wc -l`；失败看 `<run>/failures__<tag>.json`，不在 Slurm 日志里翻。
+- 接力链：每组 `N_LINKS` 个作业 `afterany` 串联，后一链重跑同一命令即续跑。
+- 分析：本轮 **只有 zs**（D-035），用 `python scripts/analyze_snn_round.py --dataset <shu|wbci_shu> --run zs=<dir> --allow-empty-family --bench results_snapshot_2026-09-13/experiments/<...>_bench_v1 --out outputs/analysis/snn_round/<name>`。**不要**再传 `--run eaz=` / `--aligned-arm`。若以后重开对齐臂：`--run eaz=<dir> --aligned-arm eaz` 不能省（脚本靠它把 `eaz` 映射成预注册角色 `ea`，对不上会退出）。
+- 先导数字的出处：`outputs/analysis/snn_round/shu_pilot_lr1e4/`（lr 1e-4：S/D vs EEGNeX、S vs D、S-EEGNet vs EEGNet）与 `shu_pilot_lr1e3/`（lr 1e-3：zs vs eaz 的 EA 效应、H1 交互、AdaBN、afe/spk/noinit 消融）的 `paired_tests.csv` / `interaction_H1.csv`；`shu_pilot/` 是 5 臂合表（只看 `per_model.csv`）。
 
-There are two report layers; do not confuse them.
+## 10. 交接信息
 
-1. **Scripted report (no AI, automatable).** `python code/run.py --summarize --config <phase>` produces tables/figures, the native detailed report, and the canonical 9-section `REPORT.md`. This is deterministic and may be auto-run after training (e.g. a Slurm dependency job `--dependency=afterany:<train_ids>`). No AI and no manual narration needed.
+- **路径变更（2026-09-18）**：`SYX/eeg-mi-online` → `SYX/ICASSP`（同一 git 仓库，`mv` 重命名，历史完整）；旧路径留兼容软链接给正在跑的作业。剪掉的遗留（跨 session Phase 0–2c 结果区 `1_..5_*`、`0_docs/`、`backup/`、`inbox/`、`models_eeg_foundation/`、旧路线文档、一次性脚本、快照里的跨 session run）在 `/share/home/yuan/SYX/_archive/eeg-mi-online_legacy_2026-09-18/`，git 历史与 `/share/home/yuan/SYX_backup_2026-09-13.tar.gz` 也都有。
+- 3C processed manifest（`outputs/processed/wbci_shu_3c_mat_clean/processed_manifest.csv`）的 `npz_path` 已改写为新路径。
+- **可迁移 GitHub（D-041）**：`https://github.com/yixiangsunLeo/ICASSP`（private）。代码 + 灵魂文件 + 小结果文件走这里；2C/SHU/3C 的 npz 与预训练权重 **不进 git**，3090 按 `HANDOFF.md` 拷盘并 `scripts/repath_manifests.py`。训练仍写 `outputs/experiments/{wbci_shu,shu}/snn_*_zs_lr1e4_v1/`。
+- 数据（4090）：`/share/workspace2/moto_imagination/WBCIC_SHU/processed/eog_ecg_clean/`（2C）、`/share/workspace2/moto_imagination/SHU/processed/npz_clean/`（SHU）、`outputs/processed/wbci_shu_3c_mat_clean/`（3C）。BCI IV 2a（BNCI2014001）的 benchmark pkl 在 `/share/workspace2/moto_imagination/eegbench_benchmark_pkl/`（由 `../Benchmark` 生成），接入本框架需写 loader。
+- 姊妹项目 `../Benchmark`（EEG 基础模型 benchmark，`AGENTS.md` 自成体系）：ICASSP 截稿后再回去做。
+- 其他 GPU 项目共用集群配额，提交前看 `squeue` 总量。
 
-2. **AI analysis report (manual trigger, per user's choice).** The user does NOT pre-write analysis and does NOT need to run anything special. After training+summarize have produced the data, the user opens Cursor/ChatGPT and says one line like “<phase> 跑完了，读结果写分析报告”. The agent then:
-   - reads the phase's `tables/` CSVs + canonical `REPORT.md` (never fabricates numbers),
-   - writes a deep analysis following the §8 9-section structure,
-   - saves it to the phase's `report/` folder as `AI_ANALYSIS.md` (e.g. `2_baseline/no_alignment_baseline/report/AI_ANALYSIS.md`),
-   - updates `progress.md` + `0_docs/operation_log.md`.
+## 11. 禁止事项
 
-   Trigger phrases an agent should treat as "write the AI analysis report": “写分析报告 / 写 AI 分析 / 解读结果 / analyze results / write analysis report”. The AI report is grounded in the scripted tables; it adds cross-phase reasoning, anomalies, hypotheses, and next-step research direction that the templated report cannot.
-
-## 7. Experiment Rules
-
-1. Split by subject/session, never leak by trial.
-2. Cross-session train/val come only from source/train data.
-   **Cross-subject（端到端主线）**：测试被试绝不出现在 train/val；验证集来自留出的**训练被试**；
-   归一化必须是 per-trial fit-free 的（不许用跨 trial/跨被试统计量）。
-3. Target labels are only for final evaluation.
-4. If Prototype Drift uses target labels for offline diagnostics, report must state: target labels are used only for offline diagnostic analysis, not for training or adaptation.
-5. All experiments must record seed, data version, model hyperparameters, training recipe, hardware.
-6. Heavy/GPU work must use Slurm and CUDA env `mi_torch_cu118`.
-7. Smoke test before full run.
-8. Mark a stage done only after output files exist on disk.
-
-## 8. File Generation Rules
-
-Markdown files should use YAML frontmatter:
-
-```yaml
----
-title: "File Title"
-tags:
-  - "#modality/eeg"
-created: "YYYY-MM-DD"
-updated: "YYYY-MM-DD"
-status: "active"
----
-```
-
-Naming:
-
-- No spaces in filenames.
-- Prefer lowercase snake_case for logs/tables.
-- Reports can use `*_REPORT.md` or descriptive `.md`.
-- CSV headers use English lowercase snake_case.
-
-Report structure:
-
-1. Core conclusion first.
-2. Goal.
-3. Method.
-4. Protocol.
-5. Results.
-6. Analysis.
-7. Relationship to previous phases.
-8. Next step.
-9. File list.
-
-## 8.5 Mandatory Handoff Updates
-
-Every meaningful action must update the handoff memory immediately, not later:
-
-1. If project structure changes, update `0_docs/ARCHITECTURE.md`.
-2. If run readiness, cleanup policy, backup location, or deletable-file guidance changes, update `0_docs/STATUS.md`.
-3. If a new file is created, update `0_docs/FILE_CATALOG.md` and the nearest `README.md`.
-4. If files/directories are created, moved, renamed, or deleted, update `0_docs/operation_log.md`.
-5. If experiment status, completed results, or next-step decisions change, update `progress.md`, `experiment_log.md`, and `results.md`.
-6. If the change affects what another ChatGPT/Cursor agent must know, update this `AGENTS.md`.
-
-This is required for cross-agent handoff. Do not leave structure/progress knowledge only in chat.
-
-## 9. Historical Tracking and Backup Policy
-
-Current state:
-
-- Historical experiments, Slurm scripts, completed results, checkpoints, logs, and old compatibility layers have been moved into `backup/root_archive_2026-06-10/`.
-- A lighter pre-cleanup snapshot remains in `backup/legacy_snapshot_2026-06-10/`.
-
-Recommended future strategy:
-
-- Do not delete `backup/root_archive_2026-06-10/`; it contains the old runnable/project history.
-- Do not duplicate large checkpoints again.
-- If full training is needed before direct `code/` runners are implemented, temporarily restore compatibility dirs from backup or implement direct runners first.
-
-## 10. What Not To Do
-
-- Do not write to external RAW trees; only write `processed/` if local config explicitly points there.
-- Do not fabricate results.
-- Do not silently run heavy jobs on login node.
-- Do not collapse future work into current status.
-- Do not move old compatibility layers into backup without updating paths and confirming risk.
-- Do not delete checkpoints/results/logs just because they are large.
+- 不把结果数字、历史叙事、临时 TODO 堆进本文件。
+- 不在 2C 结果出来前把「非劣」「H1 成立/不成立」写成结论；不看测试集调主模型。
+- 不删 `outputs/`、`checkpoints/`、`results_snapshot_2026-09-13/`、`logs/`——大不是删的理由。
+- 不改第三方 / 官方 baseline 的数学（`code/models/paper_baselines/` 只认作者官方代码）。
+- 不在 `SYX/` 顶层再放文件；ICASSP 的东西只进本目录，benchmark 的东西只进 `../Benchmark`。

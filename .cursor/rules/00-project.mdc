@@ -1,0 +1,25 @@
+---
+description: ICASSP 2027 project identity, deadline, and where the rules and state live
+alwaysApply: true
+---
+
+# Project
+
+This directory is the **ICASSP 2027 paper project**: *Spiking EEGNeX for cross-subject motor-imagery EEG* —
+EEGNeX spiked layer by layer (temporal-native encoding: the EEG sample axis is the spike time axis), plus
+label-free subject alignment (Euclidean Alignment + AdaBN), compared **per subject** against 18 strong ANN
+entries on 87 subjects / 3 cohorts (WBCIC-SHU 2C 51, SHU 2022 25, WBCIC-SHU 3C 11). Paper framing is
+**non-inferiority + alignment × network-type interaction + energy** (do NOT claim temporal-native spiking as
+novel: Zhang et al., Neural Networks 2025 already published PLIF on raw samples + EA).
+
+**Deadline: 2026-09-23 23:59 AoE = 2026-09-24 20:00 Beijing.** 4 pages + optional 5th page of references only.
+
+On a **3090 / new-machine clone**: execute `HANDOFF.md` first. On this 4090 tree, before any work read,
+in this order: `AGENTS.md` (rules, verified facts) → `docs/STATUS.md` (what is running, next steps,
+countdown) → top entry of `progress.md` → `docs/PLAN_spiking_eegnex_icassp2027.md` (§0.5 = pilot
+results and main-run decisions). Prior ANN results live in `docs/PRIOR_RESULTS.md` and `docs/RESULTS_TRUTH.md`.
+Portable GitHub: `https://github.com/yixiangsunLeo/ICASSP` (private; D-041).
+
+This repo is the continuation of `eeg-mi-online` (same git history), renamed to `ICASSP` on 2026-09-18 and
+pruned of cross-session-era material (now in `../_archive/`). The sister project `../Benchmark` (EEG foundation
+model benchmark) resumes after the deadline; do not mix files between the two.

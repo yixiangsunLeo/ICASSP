@@ -1,0 +1,56 @@
+# EEGPT large (Wang et al., NeurIPS 2024) — official pretrained encoder, fine-tuned end to end.
+# Source: https://github.com/BINE022/EEGPT @ a0e0a8fad729e2ecf4eedb3a81548a6e6d48a705, vendored
+#   verbatim under code/models/external/eegpt/_official/ (Apache-2.0); wrapper = adapter.py.
+# Weights: weights/eegpt.ckpt (target_encoder.*, strict load). The file is a conversion of the
+#   HF mirror eeg-telecom-paris/eegpt-large-official and is NOT tensor-verified against the
+#   official figshare eegpt_mcae_58chs_4s_large4E.ckpt -> footnote any result (PROVENANCE.md).
+#
+# `defaults` are the OFFICIAL large configuration exactly as the EEG-FM-Compass benchmark builds
+# it (models/FM/EEGPT/Loader_EEGPT.py) plus that benchmark's fine-tuning wrapper (1x1 channel
+# mixer, flatten readout, dropout 0.5 + linear head). Do not tune: protocol P6.
+#
+# Input handling (inside forward, protocol P4): [B, C, 1000] @ 250 Hz -> electrodes outside
+# EEGPT's 62-name vocabulary dropped -> sinc-resampled to 1024 samples @ 256 Hz = 16 patches of
+# 64. No filtering, no amplitude scaling, no Euclidean alignment.
+#
+# Data dims (n_channels/n_times/n_classes/sfreq) are injected by the experiment layer. The only
+# per-dataset input is WHICH electrode names the channels carry (`channel_set` ->
+# code/configs/datasets/<set>.yaml), because EEGPT needs channel ids.
+name: "eegpt"
+
+defaults:
+  # --- encoder: eegpt_mcae_58chs_4s_large4E ---
+  embed_dim: 512
+  embed_num: 4                 # summary tokens per time patch
+  depth: 8
+  num_heads: 8
+  mlp_ratio: 4.0
+  qkv_bias: true
+  drop_rate: 0.0
+  attn_drop_rate: 0.0
+  drop_path_rate: 0.0
+  init_std: 0.02
+  norm_eps: 1.0e-6
+  patch_size: 64
+  native_sfreq: 256
+  n_native_times: 1024         # 4 s x 256 Hz = 16 x 64
+
+  # --- fine-tuning wrapper (EEG-FM-Compass defaults for EEGPT) ---
+  use_chan_conv: true          # Conv1dWithConstraint(n_kept, n_kept, 1, max_norm=1)
+  chan_conv_max_norm: 1.0
+  readout: "flatten"           # features = 16 patches x 4 summary tokens x 512 = 32768
+  head_dropout: 0.5            # LinearLayers(feature_dim, n_classes, flatten=1, dropout_rate=0.5)
+
+  # --- pretrained weights ---
+  pretrained: true
+  weights_file: "eegpt.ckpt"
+  weights_sha256: "f406ec002fd56f618f323c170b9c9e68997ea3299b33575611cb3e26fb1be273"
+
+# Electrode names per cohort (keyed by the experiment's data.name).
+#   wbci_shu: 58 names, all in EEGPT's vocabulary -> 58 kept.
+#   shu:      32 names; T3/T4/T5/T6 are renamed T7/T8/P7/P8 (same positions), the earlobes
+#             A1/A2 are not in the vocabulary and are dropped -> 30 kept.
+per_dataset:
+  wbci_shu_2c: {channel_set: "wbci_shu"}
+  wbci_shu_3c: {channel_set: "wbci_shu"}
+  shu:         {channel_set: "shu"}

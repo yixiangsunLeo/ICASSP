@@ -1,0 +1,64 @@
+# S-EEGNeX — spiking port of the official EEGNeX_8_32 (Chen et al. 2024).
+# Implementation: code/models/spiking/models.py::SpikingEEGNeX (layer map + the reviewer-driven
+# design decisions in the module docstring). Plan: docs/PLAN_spiking_eegnex_icassp2027.md
+#
+# WHY EEGNeX: in the 18-model cross-subject benchmark (wbci_2c_cross_subject_bench_v1 /
+# shu_cross_subject_bench_v1) EEGNeX is #1 on SHU 2022 (65.5%, +3.5pp over ATCNet) and
+# tied-#1 on WBCIC-SHU 2C (83.4%) with 58k parameters and ~4x less GPU time than ATCNet.
+#
+# `defaults`: LIF, tau=2, v_th=1, hard reset at the encoder / soft reset deeper, detached
+# reset, ATan surrogate (alpha=2), T=4 direct ("repeat") encoding, 'same' padding, LI membrane
+# read-out, BN-before-neuron init (beta=0.5), mask-only spike dropout, homeostatic rate
+# regulariser (lambda 1e-3, target 0.10). All weights/shapes identical to the ANN.
+#
+# ENCODINGS
+#   repeat : direct encoding, T simulation steps with the same trial (SNN-literature default)
+#   stream : temporal-native — the EEG sample axis IS the spiking time axis (1000/250/63 steps
+#            in the three neuron layers), single pass; `causal: true` = zero look-ahead.
+#
+# `variants` are addressed as `seegnex@<variant>` and are distinct model names downstream.
+name: "seegnex"
+
+defaults:
+  T: 4
+  neuron: "lif"          # lif | plif (learnable tau per layer) | hplif (per channel, heterogeneous)
+  tau: 2.0
+  tau_min: null          # hplif: override of the per-layer init range (encoder [1.5,4], deep [1.5,8])
+  tau_max: null
+  v_threshold: 1.0
+  hard_reset: true       # encoder neuron
+  deep_reset: "soft"     # deeper spiking neurons
+  detach_reset: true
+  surrogate_alpha: 2.0
+  encoding: "repeat"     # repeat | stream
+  causal: false
+  readout: "membrane"    # membrane (LI trace -> FC) | spike (binary -> FC)
+  encoder: "conv1"       # conv1 (spike after the filter bank) | spatial (analog front end)
+  neuron_bn_init: true
+  dropout: 0.5
+  rate_reg_lambda: 0.001
+  rate_target: 0.10
+  spike_all: false
+
+per_dataset: {}
+
+variants:
+  # ---------------- D: direct encoding (T = 4), literature-standard ----------------
+  lif:      {}
+  plif:     {neuron: "plif"}
+  hplif:    {neuron: "hplif"}
+  plif_t8:  {neuron: "plif", T: 8}
+
+  # ---------------- S: temporal-native (main model = s_hplif) ----------------
+  s_lif:    {encoding: "stream"}
+  s_plif:   {encoding: "stream", neuron: "plif"}
+  s_hplif:  {encoding: "stream", neuron: "hplif"}
+
+  # ---------------- ablations of the S model (one factor each) ----------------
+  s_hplif_causal: {encoding: "stream", neuron: "hplif", causal: true}            # zero look-ahead
+  s_hplif_spk:    {encoding: "stream", neuron: "hplif", readout: "spike"}        # binary read-out
+  s_hplif_afe:    {encoding: "stream", neuron: "hplif", encoder: "spatial"}      # analog front end
+  s_hplif_hard:   {encoding: "stream", neuron: "hplif", deep_reset: "hard"}      # hard reset deeper
+  s_hplif_noinit: {encoding: "stream", neuron: "hplif", neuron_bn_init: false}   # plain BN init
+  s_hplif_noreg:  {encoding: "stream", neuron: "hplif", rate_reg_lambda: 0.0}    # no rate penalty
+  s_hplif_all:    {encoding: "stream", neuron: "hplif", spike_all: true}         # fully spiking

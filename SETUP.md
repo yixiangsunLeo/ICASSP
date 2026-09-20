@@ -1,8 +1,21 @@
+---
+title: "SETUP — 换机拉取与运行"
+tags:
+  - "#modality/eeg"
+created: "2026-06-12"
+updated: "2026-09-18"
+status: "active"
+---
+
 # 跨服务器拉取与运行（完整步骤）
 
-仓库（私有）：https://github.com/stevencummings341-prog/EEG
+**3090 / 新账号：不要跟下面这份逐步猜。打开根目录 `HANDOFF.md`，按 Phase 0–13 执行。**
+那边的 AI 只执行 `HANDOFF.md` + `docs/handoff/`。
 
-本仓库**不含**：原始 EEG、预处理 `.npz`、模型权重、以及 `outputs/` / `logs/` / `checkpoints/` / `backup/`。  
+可迁移仓库（private）：https://github.com/yixiangsunLeo/ICASSP  
+历史仓库：https://github.com/stevencummings341-prog/EEG （账号已改名 `yixiangsunLeo`，旧名自动重定向；不要用它当 3090 工作树，缺 SNN）
+
+本仓库**不含**：原始 EEG、预处理 `.npz`、模型权重、以及 `outputs/` / `logs/` / `checkpoints/` / `results_snapshot_*/`。  
 这些需在目标机挂共享盘、从原服务器拷贝，或重新预处理生成。
 
 **跨机同步原则**：Git 里只放占位路径与逻辑键；本机真实路径写在 `*.local.yaml`（已 gitignore）。
@@ -113,9 +126,12 @@ pip install --index-url https://download.pytorch.org/whl/cu121 torch torchvision
 
 ```bash
 cp code/configs/paths.example.yaml code/configs/paths.local.yaml
-cp code/configs/datasets/shu.example.yaml code/configs/datasets/shu.local.yaml
-cp code/configs/datasets/wbci_shu.example.yaml code/configs/datasets/wbci_shu.local.yaml
-# 编辑三个 *.local.yaml，把 /CHANGE/ME/... 换成本机真实路径
+# 编辑 paths.local.yaml，把 /CHANGE/ME/... 换成本机真实路径。
+# 本集群（2026-09-18 现状）只有这一份 local 文件就够了：SNN 轮的实验 YAML 全部通过 paths.local.yaml 的逻辑键
+# （processed_manifest / shu_processed_manifest / wbci_3c_processed_manifest）取数据；datasets/*.local.yaml 未创建。
+# 只有当你要跑旧的 datasets 适配器（已归档）时才需要下面两份：
+# cp code/configs/datasets/shu.example.yaml code/configs/datasets/shu.local.yaml
+# cp code/configs/datasets/wbci_shu.example.yaml code/configs/datasets/wbci_shu.local.yaml
 ```
 
 加载顺序：`*.local.yaml` > 同名占位文件。实验 YAML 用逻辑键（可跨机提交）：
@@ -142,7 +158,7 @@ export SHU_PROCESSED_MANIFEST=/your/path/SHU/processed/npz_clean/processed_manif
 - **Raw（只读）**：放在 `paths.local.yaml` / `shu.local.yaml` 指向的外部目录。  
 - **Processed**：需要 `processed_manifest.csv` + 各 session 的 `.npz`，或在本机重跑：
   - SHU：`python scripts/preprocess_shu.py`
-  - WBCIC：见 `0_docs/`、`code/README.md` 中的预处理说明  
+  - WBCIC 2C：processed npz 由数据提供方 derivatives 转换（见 `code/preprocessing/`）；3C：`python scripts/preprocess_wbci_3c.py`（约 7 分钟）
 - **权重 / 旧实验结果**：不在 Git 里。需要时从原服务器拷贝 `checkpoints/`（或共享存储对应目录）。
 
 目录占位（空目录结构）：

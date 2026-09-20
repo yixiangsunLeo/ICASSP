@@ -647,6 +647,9 @@ def run_foundation_cross_subject(cfg: Dict, cfg_path: Path, args: argparse.Names
     resume = not args.no_resume
 
     spec = _build_e2e_spec(args, train_cfg)
+    # Evaluation-time AdaBN (config `eval.adabn`): extra scored columns per held-out subject;
+    # not part of the training recipe, hence set after construction and absent from signatures.
+    spec.adabn = bool((cfg.get("eval", {}) or {}).get("adabn", False))
     device = _resolve_device(args.device or train_cfg.get("device", "auto"), logger)
     data_dims = dict(
         n_channels=data_cfg.get("n_channels", 58), n_times=data_cfg.get("n_times", 1000),

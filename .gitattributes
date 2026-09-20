@@ -1,0 +1,2 @@
+# Vendored ICASSP 2027 paper kit is stored verbatim (Template.tex ships with CRLF); never normalise it.
+paper/official_kit/* -text

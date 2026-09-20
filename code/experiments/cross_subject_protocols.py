@@ -115,8 +115,117 @@ CROSS_SUBJECT_RESULT_COLUMNS: List[str] = [
     # metrics of the LAST-epoch checkpoint on the same subject
     "last_accuracy", "last_balanced_accuracy", "last_macro_f1", "last_auc",
     "last_cohen_kappa",
+    # metrics of the BEST checkpoint after test-time AdaBN (only when `eval.adabn: true`)
+    "adabn_accuracy", "adabn_balanced_accuracy", "adabn_macro_f1", "adabn_auc",
+    "adabn_cohen_kappa",
     "status", "error",
 ]
+
+
+# --------------------------------------------------------------------------- #
+# Normalization modes
+# --------------------------------------------------------------------------- #
+#: ``train.normalization`` grammar (2026-09-18, spiking/alignment round):
+#:
+#:   <trial_norm>                         e.g. "per_sample_zscore"   (unchanged behaviour)
+#:   ea_session[+<trial_norm>]            Euclidean Alignment fitted on each SESSION's own
+#:                                        trials (He & Wu, IEEE TBME 2020), then the optional
+#:                                        per-trial normalization
+#:   ea_subject[+<trial_norm>]            EA fitted on all pooled trials of a subject
+#:   ea_session_mu / ea_subject_mu        same, but the reference covariance is computed on
+#:                                        an 8-30 Hz copy of the trials (mu/beta band, where
+#:                                        MI information lives) and applied to the broadband
+#:                                        input; 0.5-40 Hz covariance is dominated by
+#:                                        low-frequency power that EA would otherwise target
+#:
+#: After EA the aligned channels have unit *average* variance by construction, so a
+#: channel-wise per-trial z-score would undo the whitening; use a per-trial **scalar** scale
+#: (``per_sample_global``) or nothing after EA.
+#:
+#: EA is label-free and uses only the trials of the very recording it is applied to, so the
+#: test subject is aligned with its **own unlabeled** data — the standard (transductive,
+#: unsupervised) use of EA in cross-subject MI. No statistic crosses subjects or splits.
+ALIGN_SCOPES = ("none", "session", "subject")
+EA_REF_BAND_MU = (8.0, 30.0)
+
+
+def split_normalization(mode: str) -> Tuple[str, str, Optional[Tuple[float, float]]]:
+    """``"ea_session_mu+per_sample_global"`` -> ``("session", "per_sample_global", (8, 30))``.
+
+    Plain modes map to ``("none", mode, None)``; a bare ``"ea_session"`` means EA only.
+    """
+    raw = (mode or "per_sample_zscore").strip().lower()
+    head, _, tail = raw.partition("+")
+    band = None
+    if head.endswith("_mu"):
+        head, band = head[:-3], EA_REF_BAND_MU
+    if head in ("ea_session", "ea_subject"):
+        return head.split("_", 1)[1], (tail or "none"), band
+    if "+" in raw or band is not None:
+        raise ValueError(f"unknown composite normalization '{mode}'")
+    return "none", raw, None
+
+
+#: Shrinkage of the reference covariance toward ``tr(R)/C * I`` before the inverse square root
+#: (Ledoit-Wolf style). Plain EA (He & Wu 2020) uses 0; with 58 channels the smallest
+#: eigen-directions of ``R`` are noise and un-shrunk EA amplifies them by orders of magnitude.
+#: 0.1 is the value the Phase-2b alignment study used; it whitens every direction whose
+#: variance is at least ~tr/C to within 10% and leaves genuinely tiny directions damped.
+EA_SHRINKAGE = 0.1
+
+
+def euclidean_align(X: np.ndarray, shrinkage: float = EA_SHRINKAGE,
+                    ref_band: Optional[Tuple[float, float]] = None,
+                    sfreq: float = 250.0) -> np.ndarray:
+    """``R^{-1/2} X`` with ``R`` the mean trial covariance of ``X`` (``[n, C, T]`` -> same).
+
+    With ``ref_band`` the reference covariance is estimated on a zero-phase FIR band-passed
+    copy of the trials (the whitening matrix is then applied to the unfiltered input).
+    """
+    from ..methods.session_alignment import EuclideanAlignment
+
+    if X.shape[0] < 2:
+        raise ValueError("Euclidean Alignment needs at least 2 trials")
+    ea = EuclideanAlignment(shrinkage=shrinkage)
+    if ref_band is None:
+        ea.fit(X)
+    else:
+        from scipy.signal import filtfilt, firwin
+
+        lo, hi = float(ref_band[0]), float(ref_band[1])
+        taps = firwin(101, [lo, hi], pass_zero=False, fs=float(sfreq))
+        Xf = filtfilt(taps, [1.0], np.asarray(X, dtype=np.float64), axis=-1)
+        ea.fit(Xf)
+    return ea.transform(X).astype(np.float32)
+
+
+@torch.no_grad()
+def adapt_batchnorm_stats(model: torch.nn.Module, loader: DataLoader, *,
+                          device: torch.device) -> int:
+    """AdaBN (Li et al., Pattern Recognition 2018): replace every BatchNorm layer's running
+    mean/var by the statistics of the data in ``loader`` (cumulative average over batches).
+
+    Only BatchNorm modules are switched to train mode; dropout and everything else stay in
+    eval mode, so the passes are deterministic and no gradient is taken. Labels are never
+    read. Affine parameters are untouched. Returns the number of BatchNorm layers adapted
+    (0 -> the model has none and nothing happened). The model is left in eval mode.
+    """
+    bns = [m for m in model.modules() if isinstance(m, torch.nn.modules.batchnorm._BatchNorm)]
+    if not bns:
+        return 0
+    momenta = [bn.momentum for bn in bns]
+    model.eval()
+    for bn in bns:
+        bn.reset_running_stats()
+        bn.momentum = None          # cumulative moving average == plain mean over all batches
+        bn.train()
+    for batch in loader:
+        xb = batch[0].to(device, non_blocking=True)
+        model(xb)
+    for bn, mom in zip(bns, momenta):
+        bn.momentum = mom
+    model.eval()
+    return len(bns)
 
 
 # --------------------------------------------------------------------------- #
@@ -159,6 +268,7 @@ def load_subject_data(
             "pool_sessions=false (per-session cross-subject cells) is not implemented; "
             "the current protocol pools a subject's ok sessions."
         )
+    align_scope, trial_norm, ref_band = split_normalization(normalization)
     by_subject = group_by_subject(records)
     out: "Dict[str, SubjectData]" = {}
     for subj, recs in by_subject.items():
@@ -172,10 +282,15 @@ def load_subject_data(
                     f"got {tuple(X.shape)} from {rec.npz_path}. Check data.n_channels / "
                     "data.n_times in the experiment config (datasets are never merged)."
                 )
+            if align_scope == "session":
+                X = euclidean_align(X, ref_band=ref_band)
             xs.append(torch.from_numpy(X))
             ys.append(torch.from_numpy(normalize_labels(d["y"]).astype(np.int64)))
             sess_of_trial += [rec.session] * X.shape[0]
-        X_all = normalize_trials(torch.cat(xs, dim=0), normalization)
+        X_cat = torch.cat(xs, dim=0)
+        if align_scope == "subject":
+            X_cat = torch.from_numpy(euclidean_align(X_cat.numpy(), ref_band=ref_band))
+        X_all = normalize_trials(X_cat, trial_norm)
         y_all = torch.cat(ys, dim=0)
         out[subj] = SubjectData(subject=subj, X=X_all, y=y_all,
                                 sessions=[r.session for r in recs],
@@ -633,6 +748,13 @@ def run_cell(
                                   "y_pred_best": [], "y_pred_last": [],
                                   "probs_best": [], "probs_last": []}
 
+    # Spiking models expose eval-time firing statistics (per-layer rates -> energy). They
+    # accumulate over every eval forward, so drain them right before the held-out subject's
+    # prediction pass and read them right after; the result is per-subject, best checkpoint.
+    spike_stats_fn = getattr(model, "pop_spike_stats", None)
+    if not callable(spike_stats_fn):
+        spike_stats_fn = None
+
     for subj in fold.test_subjects:
         sd = subject_data[subj]
         test_ds, _ = _make_dataset(subject_data, [subj])
@@ -640,12 +762,31 @@ def run_cell(
                               num_workers=spec.num_workers, pin=pin)
         if best_state is not None:
             model.load_state_dict(best_state)
+        if spike_stats_fn is not None:
+            spike_stats_fn()                                # drain val-time counters
         y_true, y_pred, probs, _ = predict(model, test_loader, device=device)
         best_metrics = evaluate_predictions(y_true, y_pred, probs)
+        spike_stats = spike_stats_fn() if spike_stats_fn is not None else None
 
         model.load_state_dict(last_state)
         y_true_l, y_pred_l, probs_l, _ = predict(model, test_loader, device=device)
         last_metrics = evaluate_predictions(y_true_l, y_pred_l, probs_l)
+
+        # Optional AdaBN scoring of the BEST checkpoint: BatchNorm running statistics are
+        # re-estimated on this subject's unlabeled trials (labels never read), then scored.
+        adabn_metrics = None
+        adabn_spike_stats = None
+        if getattr(spec, "adabn", False) and best_state is not None:
+            model.load_state_dict(best_state)
+            n_bn = adapt_batchnorm_stats(model, test_loader, device=device)
+            if n_bn > 0:
+                if spike_stats_fn is not None:
+                    spike_stats_fn()
+                y_true_a, y_pred_a, probs_a, _ = predict(model, test_loader, device=device)
+                adabn_metrics = evaluate_predictions(y_true_a, y_pred_a, probs_a)
+                adabn_spike_stats = spike_stats_fn() if spike_stats_fn is not None else None
+                pred_dump.setdefault("y_pred_adabn", []).append(np.asarray(y_pred_a, dtype=np.int16))
+                pred_dump.setdefault("probs_adabn", []).append(np.asarray(probs_a, dtype=np.float32))
 
         # `_make_dataset` preserves subject-trial order and the loader is unshuffled, so
         # these arrays align element-wise with `sd.session_of_trial`.
@@ -676,12 +817,22 @@ def run_cell(
             "last_macro_f1": float(last_metrics["macro_f1"]),
             "last_auc": float(last_metrics["auc"]),
             "last_cohen_kappa": float(last_metrics["cohen_kappa"]),
+            **({f"adabn_{k}": float(adabn_metrics[k]) for k in
+                ("accuracy", "balanced_accuracy", "macro_f1", "auc", "cohen_kappa")}
+               if adabn_metrics is not None else {}),
             "status": "ok", "error": "",
         })
-        per_subject_detail.append({"test_subject": subj, "n_trials": sd.n_trials,
-                                   "sessions": sd.sessions,
-                                   "best": {k: float(v) for k, v in best_metrics.items()},
-                                   "last": {k: float(v) for k, v in last_metrics.items()}})
+        detail = {"test_subject": subj, "n_trials": sd.n_trials,
+                  "sessions": sd.sessions,
+                  "best": {k: float(v) for k, v in best_metrics.items()},
+                  "last": {k: float(v) for k, v in last_metrics.items()}}
+        if adabn_metrics is not None:
+            detail["adabn"] = {k: float(v) for k, v in adabn_metrics.items()}
+        if spike_stats is not None:
+            detail["spike_stats"] = spike_stats
+        if adabn_spike_stats is not None:
+            detail["spike_stats_adabn"] = adabn_spike_stats
+        per_subject_detail.append(detail)
 
     if best_state is not None:
         model.load_state_dict(best_state)
@@ -817,11 +968,14 @@ def run_cross_subject(
                         if folds_subset is None or f.fold in set(int(i) for i in folds_subset)]
             for fold in selected:
                 for seed in seeds:
-                    # The split seed is part of the tag only when several are swept, so
-                    # single-split runs (e.g. paper_baseline_3c_821_v1) keep their layout.
+                    # Include the split seed in the tag whenever more than one split is
+                    # swept, or the split is not the legacy default 0. 3C LOSO at seed 0
+                    # (running jobs; paper_baseline_3c_821_v1) keeps `model__foldK__seedS`.
+                    # A lone non-zero seed (2C/SHU yaml `split_seeds: [43]`) must keep
+                    # `split43` in the tag (D-030 / D-036).
                     # `safe_tag` turns an alias `atcnet@tcn8` into `atcnet-tcn8` for paths;
                     # the logical name (with `@`) stays in rows and the cell signature.
-                    split_part = f"split{ss}__" if multi_split else ""
+                    split_part = f"split{ss}__" if multi_split or int(ss) != 0 else ""
                     tag = f"{safe_tag(model_name)}__{split_part}fold{fold.fold}__seed{int(seed)}"
                     ck = ((Path(ckpt_root) / tag) if ckpt_root is not None
                           else (cells_dir / tag / "ckpt"))

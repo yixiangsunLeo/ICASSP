@@ -1,0 +1,51 @@
+{
+  "eegnex": {},
+  "seegnex@hplif": {
+    "T": 4,
+    "neuron": "hplif",
+    "tau": 2.0,
+    "tau_min": null,
+    "tau_max": null,
+    "v_threshold": 1.0,
+    "hard_reset": true,
+    "detach_reset": true,
+    "surrogate_alpha": 2.0,
+    "encoding": "repeat",
+    "causal": false,
+    "dropout": 0.5,
+    "spike_all": false
+  },
+  "seegnex@s_hplif": {
+    "T": 4,
+    "neuron": "hplif",
+    "tau": 2.0,
+    "tau_min": null,
+    "tau_max": null,
+    "v_threshold": 1.0,
+    "hard_reset": true,
+    "detach_reset": true,
+    "surrogate_alpha": 2.0,
+    "encoding": "stream",
+    "causal": true,
+    "dropout": 0.5,
+    "spike_all": false
+  },
+  "seegnet@plif": {
+    "T": 4,
+    "neuron": "plif",
+    "tau": 2.0,
+    "tau_min": null,
+    "tau_max": null,
+    "v_threshold": 1.0,
+    "hard_reset": true,
+    "detach_reset": true,
+    "surrogate_alpha": 2.0,
+    "encoding": "repeat",
+    "causal": false,
+    "dropout": 0.5,
+    "F1": 8,
+    "D": 2,
+    "F2": 16,
+    "kernLength": 64
+  }
+}

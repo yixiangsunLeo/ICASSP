@@ -1,0 +1,28 @@
+# External-baseline round (D-034): one line = one single-GPU job; fields separated by ';'.
+#   <job_name> ; <config>|<models>|<tag> [; <config>|<models>|<tag> ...]
+# Every spec on a line runs as its own process on the job's GPU (packing). Lines are submitted
+# in order (priority: 2C confirmation cohort first, then SHU, then 3C, then the 3C ANN fill-in).
+# Cells land in the main-run directories (snn_<ds>_zs_lr1e4_v1); finished cells are skipped on
+# resubmission, so re-running `submit_baselines.sh` on this file is always safe.
+#
+# Estimated GPU-h (bench-calibrated): TCFormer ~12 total; LaBraM 2C ~10 / SHU ~3 / 3C ~8;
+# EEGPT 2C ~15 / SHU ~5 / 3C ~10; CBraMod ~ LaBraM; 3C ANN fill-in ~15.
+
+# --- 2C (51 subjects, 10 cells per model) ---
+bl2c_labram  ; code/configs/experiments/bl_wbci2c_zs_lr1e4.yaml|labram|bl2c_labram
+bl2c_eegpt   ; code/configs/experiments/bl_wbci2c_zs_lr1e4.yaml|eegpt|bl2c_eegpt
+bl2c_cbramod ; code/configs/experiments/bl_wbci2c_zs_lr1e4.yaml|cbramod|bl2c_cbramod
+# TCFormer is small: its three cohorts share one GPU as three concurrent processes.
+bl_tcformer  ; code/configs/experiments/bl_wbci2c_zs_lr1e4.yaml|tcformer|bl2c_tcformer ; code/configs/experiments/bl_shu_zs_lr1e4.yaml|tcformer|blsh_tcformer ; code/configs/experiments/bl_wbci3c_zs_lr1e4.yaml|tcformer|bl3c_tcformer
+
+# --- SHU (25 subjects, 10 cells per model) ---
+blsh_labram  ; code/configs/experiments/bl_shu_zs_lr1e4.yaml|labram|blsh_labram
+blsh_eegpt   ; code/configs/experiments/bl_shu_zs_lr1e4.yaml|eegpt|blsh_eegpt
+blsh_cbramod ; code/configs/experiments/bl_shu_zs_lr1e4.yaml|cbramod|blsh_cbramod
+
+# --- 3C (11 subjects, LOSO, 11 cells per model) ---
+bl3c_labram  ; code/configs/experiments/bl_wbci3c_zs_lr1e4.yaml|labram|bl3c_labram
+bl3c_eegpt   ; code/configs/experiments/bl_wbci3c_zs_lr1e4.yaml|eegpt|bl3c_eegpt
+bl3c_cbramod ; code/configs/experiments/bl_wbci3c_zs_lr1e4.yaml|cbramod|bl3c_cbramod
+# ANN fill-in so the 3C column is on the shared recipe (patience 25), three processes on one GPU.
+bl3c_ann     ; code/configs/experiments/bl_wbci3c_zs_lr1e4.yaml|atcnet|bl3c_atcnet ; code/configs/experiments/bl_wbci3c_zs_lr1e4.yaml|eeg_deformer|bl3c_deformer ; code/configs/experiments/bl_wbci3c_zs_lr1e4.yaml|fbcnet|bl3c_fbcnet

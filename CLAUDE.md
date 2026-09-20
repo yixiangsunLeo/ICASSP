@@ -3,29 +3,23 @@ title: "CLAUDE.md — 兼容入口（指向 AGENTS.md）"
 tags:
   - "#modality/eeg"
 created: "2026-06-12"
-updated: "2026-08-04"
+updated: "2026-09-20"
 status: "active"
 ---
 
-# CLAUDE.md — 兼容入口
+# CLAUDE.md
 
-> 本文件只是兼容入口，**唯一权威项目记忆是同目录的 `AGENTS.md`**。
-> Claude Code / 其他会自动读取 `CLAUDE.md` 的工具，请立刻转读下列文件再开工。
+本文件只是给自动读取 `CLAUDE.md` 的工具用的入口。
 
-## 接手前必读（按顺序）
+- **在 3090 / 新机器上：** 先完整执行根目录 **`HANDOFF.md`**（那边 AI 的主程序），再读 `AGENTS.md`。
+- **在 4090 / 本目录：** **唯一权威规则文件是同目录的 `AGENTS.md`**，请先读它。
 
-1. **`AGENTS.md`** — 唯一权威「灵魂记忆」：项目身份、研究链、已验证事实、规则、硬边界。
-2. `0_docs/ARCHITECTURE.md` — 目录结构 + 代码分层 + 文件职责。
-3. `0_docs/STATUS.md` — 当前进度、能否跑、SHU 就绪度、下一步、清理策略。
-4. `progress.md` — 进度日记（逐条追加，最新在上）。
-5. `0_docs/FILE_CATALOG.md` — 文件索引（新增文件后回来更新）。
+读完 `AGENTS.md` 后按需读：`docs/STATUS.md`（现在做到哪、什么在跑、截稿倒计时）→ `progress.md` 顶部一条 →
+`docs/PLAN_spiking_eegnex_icassp2027.md`（方案 v2；§0.5 先导结果与主实验决定）→ `docs/PRIOR_RESULTS.md`（之前跑过的 3 队列 × 18 ANN）→
+`docs/ARCHITECTURE.md`（代码分层）。
 
-> 核心灵魂集（导入 ChatGPT 做背景更新）= `AGENTS.md` + `progress.md` + `0_docs/STATUS.md` + `0_docs/ARCHITECTURE.md`。
+最关键的三条（细节见 `AGENTS.md`）：
 
-## 最关键的三条（细节见 AGENTS.md）
-
-- 工作根目录 = 本仓库克隆路径（任意机器任意目录）；唯一人工入口 `python code/run.py --config code/configs/experiments/<phase>.yaml`。
-- 外部 raw/processed 路径写在本机 `*.local.yaml`（gitignore）；不编造结果；GPU 走 Slurm + `mi_torch_cu118`，禁登录节点跑重活。
-- 每做一件事立刻同步文档（`progress.md` / `0_docs/operation_log.md` / `0_docs/FILE_CATALOG.md` / 最近 README），知识不许只留在聊天里。
-
-注意：换机按根目录 `SETUP.md` 配置环境与 `*.local.yaml`；本目录的 `AGENTS.md` 是唯一权威。
+- 截稿 **2026-09-24 20:00 北京**。4090 上不要 `scancel` 别人的作业、不要改正在被作业读取的 `code/` 与 `scripts/slurm/`。
+- 不编造结果；测试集不参与模型选择；数字只能来自脚本生成的表。
+- 做了事记 `progress.md`，状态变了改 `docs/STATUS.md`，决定记 `docs/DECISIONS.md`。3090 按 `HANDOFF.md` Phase 12 同步 `result.json`；其余不 commit 除非用户要求。

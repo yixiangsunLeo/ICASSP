@@ -1,0 +1,311 @@
+% refs.bib — required citations for the ICASSP 2027 manuscript (AGENTS.md §7.3).
+% Entries marked "VERIFY" were written from memory on 2026-09-18: check every field (authors, title, venue,
+% volume, pages, DOI) against the publisher page before submission.
+% Internal remarks live in `annote` fields: IEEEbib.bst prints `note` (it leaked VERIFY text into the reference list
+% on 2026-09-18) but ignores `annote`, `url`, `doi`, `eprint`. Never put anything you do not want printed into `note`.
+
+% ---------------- Backbones / ANN baselines ----------------
+@article{lawhern2018eegnet,
+  author  = {Lawhern, Vernon J. and Solon, Amelia J. and Waytowich, Nicholas R. and Gordon, Stephen M. and Hung, Chou P. and Lance, Brent J.},
+  title   = {{EEGNet}: A compact convolutional neural network for {EEG}-based brain--computer interfaces},
+  journal = {Journal of Neural Engineering},
+  volume  = {15},
+  number  = {5},
+  pages   = {056013},
+  year    = {2018}
+}
+
+@article{chen2024eegnex,
+  author  = {Chen, Xia and Teng, Xiangbin and Chen, Han and Pan, Yafeng and Geyer, Philipp},
+  title   = {Toward reliable signals decoding for electroencephalogram: A benchmark study to {EEGNeX}},
+  journal = {Biomedical Signal Processing and Control},
+  volume  = {87},
+  pages   = {105475},
+  year    = {2024},
+  annote    = {VERIFY volume/pages}
+}
+
+@article{altaheri2023atcnet,
+  author  = {Altaheri, Hamdi and Muhammad, Ghulam and Alsulaiman, Mansour},
+  title   = {Physics-informed attention temporal convolutional network for {EEG}-based motor imagery classification},
+  journal = {IEEE Transactions on Industrial Informatics},
+  volume  = {19},
+  number  = {2},
+  pages   = {2249--2258},
+  year    = {2023}
+}
+
+@article{ding2025deformer,
+  author  = {Ding, Yi and Li, Yong and Sun, Hao and Liu, Rui and Tong, Chengxuan and Liu, Chenyu and Zhou, Xinliang and Guan, Cuntai},
+  title   = {{EEG-Deformer}: A dense convolutional transformer for brain--computer interfaces},
+  journal = {IEEE Journal of Biomedical and Health Informatics},
+  volume  = {29},
+  number  = {3},
+  pages   = {1909--1918},
+  year    = {2025},
+  doi     = {10.1109/JBHI.2024.3504604},
+  annote    = {Online Nov. 2024 (IEEE early access); issue date March 2025. Verified 2026-09-18 via dblp / Europe PMC.}
+}
+
+@article{mane2021fbcnet,
+  author  = {Mane, Ravikiran and Chew, Effie and Chua, Karen and Ang, Kai Keng and Robinson, Neethu and Vinod, A. P. and Lee, Seong-Whan and Guan, Cuntai},
+  title   = {{FBCNet}: A multi-view convolutional neural network for brain--computer interface},
+  journal = {arXiv preprint arXiv:2104.01233},
+  year    = {2021},
+  annote    = {VERIFY author list against arXiv}
+}
+
+@article{schirrmeister2017deep,
+  author  = {Schirrmeister, Robin Tibor and Springenberg, Jost Tobias and Fiederer, Lukas Dominique Josef and Glasstetter, Martin and Eggensperger, Katharina and Tangermann, Michael and Hutter, Frank and Burgard, Wolfram and Ball, Tonio},
+  title   = {Deep learning with convolutional neural networks for {EEG} decoding and visualization},
+  journal = {Human Brain Mapping},
+  volume  = {38},
+  number  = {11},
+  pages   = {5391--5420},
+  year    = {2017}
+}
+
+% ---------------- Spiking neural networks ----------------
+@article{zhang2025snn_mi_ea,
+  author  = {Zhang, Herui and Wang, Haoran and An, Jiayu and Zheng, Shitao and Wu, Dongrui},
+  title   = {A lightweight spiking neural network for {EEG}-based motor imagery classification},
+  journal = {Neural Networks},
+  volume  = {191},
+  pages   = {107741},
+  year    = {2025},
+  doi     = {10.1016/j.neunet.2025.107741},
+  annote    = {Verified 2026-09-18 (PubMed 40578216). Code: github.com/Zhr1110/SnnForMI (SpikingJelly, model CUPY\_SNN\_PLIF). Candidate 2025 SNN baseline.}
+}
+
+% ---------------- External baselines being run in the parallel session (2026-09-18; docs/PROTOCOL_external_baselines.md) ----
+% Metadata verified 2026-09-18 against arXiv / iclr.cc / neurips.cc / Nature / Crossref (OpenReview and IEEE Xplore block
+% direct fetches; forum ids taken from search-engine snippets). Cited from the three cohort tables in old_reference.tex.
+@inproceedings{jiang2024labram,
+  author    = {Jiang, Wei-Bang and Zhao, Li-Ming and Lu, Bao-Liang},
+  title     = {Large Brain Model for Learning Generic Representations with Tremendous {EEG} Data in {BCI}},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year      = {2024},
+  url       = {https://openreview.net/forum?id=QzTpTRVtrP},
+  annote      = {Spotlight; arXiv:2405.18765; code + weights github.com/935963004/LaBraM}
+}
+
+@inproceedings{wang2024eegpt,
+  author    = {Wang, Guangyu and Liu, Wenchao and He, Yuhong and Xu, Cong and Ma, Lin and Li, Haifeng},
+  title     = {{EEGPT}: Pretrained Transformer for Universal and Reliable Representation of {EEG} Signals},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  volume    = {37},
+  pages     = {39249--39280},
+  year      = {2024},
+  url       = {https://openreview.net/forum?id=lvS2b8CjG5},
+  annote      = {VERIFY pages (from braindecode's citation; not shown on the NeurIPS proceedings page). Code github.com/BINE022/EEGPT. Not the same-name Yue et al. arXiv:2410.19779 (renamed BrainGPT)}
+}
+
+@article{altaheri2025tcformer,
+  author  = {Altaheri, Hamdi and Karray, Fakhri and Karimi, Amir-Hossein},
+  title   = {Temporal convolutional transformer for {EEG} based motor imagery decoding},
+  journal = {Scientific Reports},
+  volume  = {15},
+  number  = {1},
+  pages   = {32959},
+  year    = {2025},
+  doi     = {10.1038/s41598-025-16219-7},
+  annote    = {Code github.com/altaheri/TCFormer}
+}
+
+@article{song2025mdgeeg,
+  author  = {Song, Hao and She, Qingshan and Fang, Feng and Liu, Su and Chen, Yun and Zhang, Yingchun},
+  title   = {Domain generalization through latent distribution exploration for motor imagery {EEG} classification},
+  journal = {Neurocomputing},
+  volume  = {614},
+  pages   = {128889},
+  year    = {2025},
+  doi     = {10.1016/j.neucom.2024.128889},
+  annote    = {The model called MDGEEG in the DSGNet baseline table; repo github.com/DrugLover/Multibranch-DG-EEG (architecture only; training algorithm unreleased)}
+}
+
+@article{gao2026eegmoe,
+  author  = {Gao, Xuange and Wang, Danli and Zhao, Yanyan},
+  title   = {{EEGMoE}: A Domain-Decoupled Mixture-of-Experts Model for Self-Supervised {EEG} Representation Learning},
+  journal = {IEEE Transactions on Neural Networks and Learning Systems},
+  volume  = {37},
+  number  = {8},
+  pages   = {3643--3655},
+  year    = {2026},
+  doi     = {10.1109/TNNLS.2026.3652277},
+  annote    = {No public code or weights as of 2026-09-18 (paper: ``code and model will be released''); CBraMod proposed as substitute}
+}
+
+% ---------------- Candidate 2025/2026 ANN baselines (requested by the senior; not run yet) ----------------
+@inproceedings{wang2025cbramod,
+  author    = {Wang, Jiquan and Zhao, Sha and Luo, Zhiling and Zhou, Yangxuan and Jiang, Haiteng and Li, Shijian and Li, Tao and Pan, Gang},
+  title     = {{CBraMod}: A criss-cross brain foundation model for {EEG} decoding},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year      = {2025},
+  annote      = {VERIFY author list; arXiv:2412.07236; code + weights github.com/wjq-learning/CBraMod}
+}
+
+@misc{liu2025mirepnet,
+  author        = {Liu, Dingkun and Chen, Zhu and Luo, Jingwei and Lian, Shijie and Wu, Dongrui},
+  title         = {{MIRepNet}: A pipeline and foundation model for {EEG}-based motor imagery classification},
+  year          = {2025},
+  howpublished  = {arXiv:2507.20254},
+  eprint        = {2507.20254},
+  archivePrefix = {arXiv},
+  annote          = {VERIFY author list; code github.com/staraink/MIRepNet; pretraining corpus = 7 MOABB datasets (no SHU / WBCIC-SHU)}
+}
+
+@article{nisnna2025,
+  author  = {VERIFY},
+  title   = {{NiSNN-A}: Non-iterative spiking neural networks with attention for motor-imagery {EEG} classification},
+  journal = {IEEE Transactions on Neural Networks and Learning Systems},
+  year    = {2025},
+  annote    = {VERIFY all fields; 54-subject LOSO + firing-rate energy}
+}
+
+@article{hrsnn2024,
+  author  = {VERIFY},
+  title   = {VERIFY: {HR-SNN} (IEEE Transactions on Cognitive and Developmental Systems, 2024)},
+  journal = {IEEE Transactions on Cognitive and Developmental Systems},
+  year    = {2024},
+  annote    = {VERIFY all fields}
+}
+
+@misc{lenet_srif_conversion,
+  author  = {VERIFY},
+  title   = {VERIFY: {LENet} / {SRIF} ANN-to-SNN conversion baselines for {EEG}},
+  year    = {2024},
+  annote    = {VERIFY: two separate entries once identified}
+}
+
+@inproceedings{fang2021plif,
+  author    = {Fang, Wei and Yu, Zhaofei and Chen, Yanqi and Masquelier, Timoth{\'e}e and Huang, Tiejun and Tian, Yonghong},
+  title     = {Incorporating learnable membrane time constant to enhance learning of spiking neural networks},
+  booktitle = {Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV)},
+  pages     = {2661--2671},
+  year      = {2021}
+}
+
+@article{pereznieves2021heterogeneity,
+  author  = {Perez-Nieves, Nicolas and Leung, Vincent C. H. and Dragotti, Pier Luigi and Goodman, Dan F. M.},
+  title   = {Neural heterogeneity promotes robust learning},
+  journal = {Nature Communications},
+  volume  = {12},
+  pages   = {5791},
+  year    = {2021}
+}
+
+@article{yin2021adaptive,
+  author  = {Yin, Bojian and Corradi, Federico and Boht{\'e}, Sander M.},
+  title   = {Accurate and efficient time-domain classification with adaptive spiking recurrent neural networks},
+  journal = {Nature Machine Intelligence},
+  volume  = {3},
+  pages   = {905--913},
+  year    = {2021}
+}
+
+@article{neftci2019surrogate,
+  author  = {Neftci, Emre O. and Mostafa, Hesham and Zenke, Friedemann},
+  title   = {Surrogate gradient learning in spiking neural networks: Bringing the power of gradient-based optimization to spiking neural networks},
+  journal = {IEEE Signal Processing Magazine},
+  volume  = {36},
+  number  = {6},
+  pages   = {51--63},
+  year    = {2019}
+}
+
+@article{zenke2021robustness,
+  author  = {Zenke, Friedemann and Vogels, Tim P.},
+  title   = {The remarkable robustness of surrogate gradient learning for instilling complex function in spiking neural networks},
+  journal = {Neural Computation},
+  volume  = {33},
+  number  = {4},
+  pages   = {899--925},
+  year    = {2021}
+}
+
+% ---------------- Alignment / adaptation ----------------
+@article{he2020ea,
+  author  = {He, He and Wu, Dongrui},
+  title   = {Transfer learning for brain--computer interfaces: A {Euclidean} space data alignment approach},
+  journal = {IEEE Transactions on Biomedical Engineering},
+  volume  = {67},
+  number  = {2},
+  pages   = {399--410},
+  year    = {2020}
+}
+
+@article{junqueira2024ea,
+  author  = {Junqueira, Bruna and Aristimunha, Bruno and Chevallier, Sylvain and de Camargo, Raphael Y.},
+  title   = {A systematic evaluation of {Euclidean} alignment with deep learning for {EEG} decoding},
+  journal = {Journal of Neural Engineering},
+  volume  = {21},
+  number  = {3},
+  pages   = {036038},
+  year    = {2024},
+  annote    = {VERIFY authors/pages}
+}
+
+@inproceedings{wimpff2024tta,
+  author    = {Wimpff, Martin and Gizzi, Leonardo and Zerfowski, Jan and Grimm, Bin},
+  title     = {Calibration-free online test-time adaptation for electroencephalography motor imagery decoding},
+  booktitle = {Proceedings of the 12th International Winter Conference on Brain--Computer Interface (BCI)},
+  year      = {2024},
+  annote      = {VERIFY authors/venue; arXiv:2311.18520}
+}
+
+@article{li2018adabn,
+  author  = {Li, Yanghao and Wang, Naiyan and Shi, Jianping and Hou, Xiaodi and Liu, Jiaying},
+  title   = {Adaptive batch normalization for practical domain adaptation},
+  journal = {Pattern Recognition},
+  volume  = {80},
+  pages   = {109--117},
+  year    = {2018}
+}
+
+% ---------------- Energy accounting ----------------
+@inproceedings{horowitz2014energy,
+  author    = {Horowitz, Mark},
+  title     = {1.1 {Computing}'s energy problem (and what we can do about it)},
+  booktitle = {IEEE International Solid-State Circuits Conference (ISSCC) Digest of Technical Papers},
+  pages     = {10--14},
+  year      = {2014}
+}
+
+@article{dampfhoffer2023snn_energy,
+  author  = {Dampfhoffer, Manon and Mesquida, Thomas and Valentian, Alexandre and Anghel, Lorena},
+  title   = {Are {SNNs} really more energy-efficient than {ANNs}? {An} in-depth hardware-aware study},
+  journal = {IEEE Transactions on Emerging Topics in Computational Intelligence},
+  volume  = {7},
+  number  = {3},
+  pages   = {731--741},
+  year    = {2023}
+}
+
+% ---------------- Datasets / cohort references ----------------
+@article{yang2025wbcic,
+  author  = {Yang, VERIFY and others},
+  title   = {VERIFY: title of the {WBCIC-SHU} motor-imagery dataset paper},
+  journal = {Scientific Data},
+  volume  = {12},
+  pages   = {488},
+  year    = {2025},
+  annote    = {VERIFY authors/title; 2C = subjects 1--51, 3C = subjects 52--62 (disjoint cohorts)}
+}
+
+@article{ma2022shu,
+  author  = {Ma, Jun and Yang, Banghua and Qiu, Wenzheng and Li, Yunzhe and Gao, Shouwei and Xia, Xinxing},
+  title   = {A large {EEG} dataset for studying cross-session variability in motor imagery brain--computer interface},
+  journal = {Scientific Data},
+  volume  = {9},
+  pages   = {531},
+  year    = {2022}
+}
+
+@article{dsgnet2026,
+  author  = {VERIFY},
+  title   = {VERIFY: {DSGNet} (used only as the published 3C reference numbers)},
+  journal = {IEEE Journal of Biomedical and Health Informatics},
+  year    = {2026},
+  doi     = {10.1109/jbhi.2026.3689121},
+  annote    = {VERIFY authors/title from the DOI}
+}

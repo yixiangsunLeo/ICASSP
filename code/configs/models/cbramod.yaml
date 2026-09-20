@@ -1,0 +1,42 @@
+# CBraMod (J. Wang et al., "CBraMod: A Criss-Cross Brain Foundation Model for EEG Decoding",
+# ICLR 2025) — official PyTorch code vendored verbatim under
+#   code/models/external/cbramod/_official/   (github.com/wjq-learning/CBraMod @ b9e96100)
+# and wrapped by code/models/external/cbramod/adapter.py (provenance: PROVENANCE.md there).
+#
+# `defaults` are the UPSTREAM DEFAULTS of `CBraMod.__init__` (models/cbramod.py), which are also
+# the configuration of the released checkpoint weights/CBraMod.pth (HF weighting666/CBraMod
+# `pretrained_weights.pth`, loaded with strict=True — any other backbone value fails to load, by
+# design). Do not tune them: this is a published reference point (protocol P6, D-034).
+#
+# Read-out follows the EEG-FM-Compass benchmark (Liu et al., NSR 2026, Loader_CBraMod.py):
+# flatten all C x 4 token embeddings -> Dropout(0.1) -> Linear(C*4*200, n_classes); full
+# fine-tuning with the shared benchmark recipe (Adam 1e-4, batch 128, patience 25 on macro-F1).
+#
+# Input conversion (inside forward, protocol P4): [B, C, 1000] @ 250 Hz -> sinc resample to
+# 200 Hz -> [B, C, 800] -> 4 contiguous 1 s patches -> [B, C, 4, 200]. No filtering, scaling or
+# alignment. CBraMod is channel-agnostic (conv positional encoding + spatial attention over the
+# channels present), so there is NO per_dataset block: n_channels only sizes the read-out.
+#
+# Data dims (n_channels / n_times / n_classes / sfreq) are injected by the experiment layer.
+name: "cbramod"
+
+defaults:
+  # backbone — upstream CBraMod() defaults = pretrained checkpoint
+  in_dim: 200
+  out_dim: 200
+  d_model: 200
+  dim_feedforward: 800
+  seq_len: 30            # accepted by upstream PatchEmbedding, unused (no learned position table)
+  n_layer: 12
+  nhead: 8               # split 4 spatial + 4 temporal heads by the criss-cross layer
+
+  # format conversion
+  native_sfreq: 200.0
+  patch_len: 200
+
+  # read-out head (EEG-FM-Compass LinearLayers)
+  head_dropout: 0.1
+
+  # official pretrained weights (weights/ dir; sha256 from weights/MANIFEST.yaml)
+  weights_file: "CBraMod.pth"
+  weights_sha256: "0792cb808c14e6b7a2bb2ce1dff379bc47bc54c49a779825bdfeb33bf8157178"

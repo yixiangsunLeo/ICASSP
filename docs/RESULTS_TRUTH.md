@@ -101,7 +101,7 @@ S4ERP 几乎打平（差 0.13pp）。"ATCNet 明显更强"这个印象只在我�
 ## 4. 已删除的两批（sessions 协议）
 
 输出、checkpoint、SLURM 日志三样全删，只剩汇总数字，来源
-`4_experiments/wbci_shu/foundation_cross_subject/DSGNET_SHUv5_3C_ANCHOR.md`（2026-08-10）。
+`docs/DSGNET_SHUv5_3C_ANCHOR.md`（2026-08-10；原在 `4_experiments/wbci_shu/foundation_cross_subject/`，2026-09-18 归档时因论文 3C 队列 / LOSO 协议与"DSGNet baseline 被低估"的论断依赖它而移回 `docs/`）。
 **无法做配对统计检验，要用必须重跑。**
 
 | 模型 | Accuracy | 配方 |
@@ -229,7 +229,7 @@ S4ERP 的方向相反：
 
 `foundation_cross_subject_v1` 只有 3 个 cell（早期 smoke），不要引用。
 
-## 8. 勘误：`docs/report_824_s4erp_adv_3class.md` 的三处错误
+## 8. 勘误：`docs/report_824_s4erp_adv_3class.md` 的三处错误（该报告已于 2026-09-18 归档到 `../_archive/eeg-mi-online_legacy_2026-09-18/docs/`）
 
 | # | 位置 | 错误 | 更正 |
 |:---|:---|:---|:---|

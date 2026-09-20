@@ -35,3 +35,8 @@ manifests:
 
 splits:
   dir: "splits"
+
+# Optional. Read only from paths.local.yaml (not this file) by
+# code/models/external/_common.py. Relative -> repo root. Override:
+#   ICASSP_WEIGHTS_DIR=/path/to/dir
+# pretrained_weights_dir: "weights"

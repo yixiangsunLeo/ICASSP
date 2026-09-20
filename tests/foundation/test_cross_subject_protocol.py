@@ -361,16 +361,28 @@ def test_split_seed_sweep_keeps_partitions_in_separate_cells(dataset, tmp_path):
         assert (out / "splits" / f"cross_subject_folds__kfold_subject__seed{ss}.json").exists()
 
 
-def test_single_split_seed_keeps_the_legacy_cell_layout(dataset, tmp_path):
-    """Runs with one partition (e.g. paper_baseline_3c_821_v1) keep `model__foldK__seedS`."""
+def test_single_split_seed_zero_keeps_the_legacy_cell_layout(dataset, tmp_path):
+    """Runs with one partition at the legacy default 0 keep `model__foldK__seedS`."""
     out = tmp_path / "run"
     run_cross_subject(
         dataset["records"], dataset="synthetic", models=["s4erp"],
         model_params_all={"s4erp": TINY_PARAMS}, data_dims=DIMS, spec=_spec(1),
         seeds=[0], device=torch.device("cpu"), protocol="kfold_subject", n_folds=3,
-        folds_subset=[0], split_seeds=[41], val_subject_fraction=0.25, out_dir=out,
+        folds_subset=[0], split_seeds=[0], val_subject_fraction=0.25, out_dir=out,
     )
     assert [p.name for p in (out / "cells").iterdir()] == ["s4erp__fold0__seed0"]
+
+
+def test_nondefault_single_split_seed_is_in_the_cell_tag(dataset, tmp_path):
+    """A lone non-zero split (D-036 seed 43) must not drop the `split` segment (D-030)."""
+    out = tmp_path / "run"
+    run_cross_subject(
+        dataset["records"], dataset="synthetic", models=["s4erp"],
+        model_params_all={"s4erp": TINY_PARAMS}, data_dims=DIMS, spec=_spec(1),
+        seeds=[0], device=torch.device("cpu"), protocol="kfold_subject", n_folds=3,
+        folds_subset=[0], split_seeds=[43], val_subject_fraction=0.25, out_dir=out,
+    )
+    assert [p.name for p in (out / "cells").iterdir()] == ["s4erp__split43__fold0__seed0"]
 
 
 def test_channel_mismatch_fails_loudly(dataset):

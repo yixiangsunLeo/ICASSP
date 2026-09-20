@@ -1,0 +1,50 @@
+# TCFormer (Altaheri, Karray & Karimi, Scientific Reports 15:32959, 2025) — OFFICIAL PyTorch code,
+# run unmodified: https://github.com/altaheri/TCFormer @ 701a361640708ef1cc07cf22660d47edc6d9bf3c
+# (MIT), vendored under code/models/external/tcformer/_official/ (models/tcformer.py::TCFormerModule).
+#
+# `defaults` = the PAPER configuration, i.e. `model_kwargs` of the upstream configs/tcformer.yaml
+# (vendored copy: code/models/external/tcformer/_official/configs/tcformer.yaml). The Python class
+# defaults of TCFormerModule differ (F1=16, kernels (16,32,64), q_heads=8, kv_heads=4,
+# dropout_conv=0.3); the yaml is what the authors' train_pipeline.py actually passes, so it wins.
+# `drop_path_max` is not a yaml key: class default 0.25 (yaml comment: "0.4 and path drop = 0.25").
+#
+# Upstream optimiser settings in the same yaml (lr 0.0009, beta_1 0.5, weight_decay 0.001,
+# warm-up + cosine scheduler, inter-trial augmentation) are NOT used: every entry runs the one
+# shared recipe of the experiment config (Adam 1e-4, batch 128, no scheduler, no augmentation).
+#
+# TCFormer consumes raw [B, C, T] EEG and n_channels is injected by the experiment layer, so no
+# `per_dataset` block is needed (58 ch for wbci_shu_2c/3c, 32 ch for shu; T = 1000 -> 17 tokens).
+name: "tcformer"
+
+defaults:
+  # multi-kernel convolutional front-end
+  F1: 32
+  temp_kernel_lengths: [20, 32, 64]
+  d_group: 16
+  D: 2
+  pool_length_1: 8
+  pool_length_2: 7
+  dropout_conv: 0.4
+  use_group_attn: true
+
+  # Transformer encoder (grouped-query attention + RoPE)
+  q_heads: 4
+  kv_heads: 2
+  trans_depth: 5          # yaml value; see the `n2` variant below for the 77.8k headline model
+  trans_dropout: 0.4
+  drop_path_max: 0.25
+
+  # TCN head
+  tcn_depth: 2
+  kernel_length_tcn: 4
+  dropout_tcn: 0.3
+
+variants:
+  # Upstream README reports 77.8k parameters for the BCI IV-2a headline model and footnotes the
+  # HGD-LOSO results as "a deeper TCFormer encoder (N = 5, ~131k params)". The repository yaml
+  # ships trans_depth: 5 (the deeper variant, 127.2k at 22 ch / 4 cls); 77.8k is reproduced
+  # exactly by trans_depth: 2 (77,820), which is also the default in the author's braindecode
+  # port (`n_transformer_layers=2`, "the 77.8k-parameter headline configuration"). Addressed as
+  # `tcformer@n2`; which depth enters the comparison is a coordinator decision (see PROVENANCE.md).
+  n2:
+    trans_depth: 2

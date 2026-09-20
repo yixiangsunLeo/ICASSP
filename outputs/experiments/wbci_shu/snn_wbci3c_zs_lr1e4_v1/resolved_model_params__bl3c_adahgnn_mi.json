@@ -1,0 +1,23 @@
+{
+  "adahgnn@mi": {
+    "d_model": 128,
+    "patch_size": 16,
+    "k": 5,
+    "channel_set": "wbci_shu",
+    "arch": "mi",
+    "n_filters": 32,
+    "kernel_sizes": [
+      125,
+      63
+    ],
+    "embed_dim": 32,
+    "alpha": 3.0,
+    "hyper_num_scale2": 8,
+    "hyper_num_scale3": 3,
+    "dropout": 0.5,
+    "laplacian": true,
+    "temporal_attention": true,
+    "hidden": 128,
+    "mixup": false
+  }
+}

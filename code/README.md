@@ -3,7 +3,7 @@ title: "Code Framework"
 tags:
   - "#modality/eeg"
 created: "2026-06-10"
-updated: "2026-06-10"
+updated: "2026-09-18"
 status: "active"
 ---
 
@@ -21,10 +21,11 @@ status: "active"
 
 ## 3. Update Rules
 
-新增数据集/模型/方法/实验必须落在对应层，同时更新 config、README、FILE_CATALOG。
+新增数据集/模型/方法/实验必须落在对应层，同时更新 config 与最近的 README；分层与活/遗留标注见 `docs/ARCHITECTURE.md` §2。
+**主实验作业运行期间（2026-09-18 起）不要改动本目录**，见 `AGENTS.md` §3.5。
 
 ## 4. Related Files
 
 - `AGENTS.md`: 唯一权威灵魂记忆。
-- `0_docs/STRUCTURE_AND_FILE_GUIDE.md`: 全项目结构和文件职责说明。
-- `0_docs/FILE_CATALOG.md`: 新增文件索引。
+- `docs/ARCHITECTURE.md`: 全项目结构、代码分层、每个模块的状态。
+- `code/models/spiking/`: 本轮（ICASSP 2027）新增的 S-EEGNeX / S-EEGNet。

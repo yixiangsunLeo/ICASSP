@@ -1,0 +1,11 @@
+{
+  "eeg_deformer": {
+    "temporal_kernel": 51,
+    "num_kernel": 64,
+    "deformer_depth": 4,
+    "heads": 16,
+    "mlp_dim": 16,
+    "dim_head": 16,
+    "deformer_dropout": 0.25
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "atcnet": {
+    "eegn_F1": 16,
+    "eegn_D": 2,
+    "eegn_kernelSize": 64,
+    "eegn_poolSize": 7,
+    "eegn_dropout": 0.3,
+    "attention": "mha",
+    "tcn_depth": 2,
+    "tcn_kernelSize": 4,
+    "tcn_filters": 32,
+    "tcn_dropout": 0.3,
+    "n_windows": 5,
+    "fuse": "average",
+    "use_official_l2": true
+  }
+}

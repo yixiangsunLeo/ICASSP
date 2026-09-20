@@ -17,14 +17,14 @@ status: "active"
 
 | 文件 | 泛化轴 | 划分单位 |
 |:---|:---|:---|
-| `session_protocols.py` | within-session CV + 单源跨 session | trial（同 session 内）/ session |
-| `session_multisource_protocols.py` | Phase 2a 多源跨 session | session |
-| `session_alignment_protocols.py` | Phase 2b 无学习对齐 | session |
-| `prototype_drift.py` / `prototype_drift_summarize.py` | Phase 2c 原型漂移诊断 | session |
-| `session_tta.py` | Phase 3 TTA（paused，未废弃） | session |
-| `cross_subject_protocols.py` | **跨被试（当前主线）** | **subject**（LOSO / subject k-fold / holdout）；可选 session 级 train/val |
-| `cross_session_e2e_protocols.py` | **被试内跨 session（SHU 2022，2026-08-16）** | **session**（配置 train/test session 列表，每被试一个模型） |
+| `cross_subject_protocols.py` | **跨被试（唯一主线）**：被试级 LOSO / k-fold / holdout；归一化语法 `per_sample_zscore` / `ea_session[_mu]+…`（逐 session EA）；评估时 AdaBN；逐被试 `spike_stats`；`cell_signature` | **subject**；可选 session 级 train/val |
+| `session_protocols.py` | 只为 `TrainSpec` / `evaluate_predictions` 被上面复用而保留（跨 session 协议本身已归档） | — |
 | `metrics.py` / `data_quality.py` | 共用指标与质检 | — |
+
+2026-09-18 剪枝：`session_multisource_protocols.py`、`session_alignment_protocols.py`、`prototype_drift*.py`、`session_tta.py`、
+`cross_session_e2e_protocols.py`（跨 session 时代 Phase 2a–3 与 SHU 被试内跨 session）已移到
+`../_archive/eeg-mi-online_legacy_2026-09-18/code/experiments/`。它们不在主实验作业的 import 闭包里（用实际命令跑 CPU 微型 run 记录
+`sys.modules` 核实）。`code/runners.py` 里对应的 runner 函数暂留，作业结束后删除。
 
 ## 3. Update Rules
 
@@ -40,21 +40,11 @@ ses-01+02 / val ses-03，对齐 SHUv5 / WBCIC-SHU 3C 论文）；归一化必须
 `train_eval` / `test`。**test 绝不参与模型选择**——`best.pt`、早停、`best_score` 只读 val，
 守卫在 `code/training/e2e_trainer.py`。绘图见 `scripts/plot_three_curves.py`。
 
-**被试内跨 session（`cross_session_e2e_protocols.py`，2026-08-16）**：SHU 2022 用。每被试一个
-模型，train/test 的 session 列表来自 config（本轮 `ses-01+02+03` → `ses-04+05`），两者必须
-不相交且被试必须齐备（缺 session 的被试跳过并告警，不会悄悄用更少数据训练）。验证集只能从
-**训练 session** 的 trial 里分层切（`val_fraction`，本轮 1/9 = 论文 8:1:1 的 train:val）。
-每个 cell 是 `(model, subject, seed)`，走同一个 `e2e_trainer`，所以断点续跑、best/last 双
-checkpoint、三曲线与跨被试完全一致；测试指标**逐 session 分别算**（论文 Fig.7 的 s2–s5 口径）
-再加一个池化值，都存进 `result.json`。
-
-**cell 目录命名**（`scripts/plot_three_curves.py` 三种都能解析）：
-`<model>__fold<k>__seed<s>`（跨被试单划分）、`<model>__split<ss>__fold<k>__seed<s>`
-（跨被试扫多个 `split_seeds`）、`<model>__sub-<id>__seed<s>`（跨 session）。
-注意 `split_seeds` 改的是**被试划分**，`train.seeds` 改的是**训练随机种子**，两者不要混。
+**cell 目录命名**（`scripts/plot_three_curves.py` 能解析前两种）：
+`<model>__fold<k>__seed<s>`（单划分 / LOSO）、`<model>__split<ss>__fold<k>__seed<s>`（扫多个 `split_seeds`）。
+注意 `split_seeds` 改的是**被试划分**，`train.seeds` 改的是**训练随机种子**，两者不要混；往已有 run 目录续跑时命名模式必须一致（D-030）。
 
 ## 4. Related Files
 
 - `AGENTS.md`: 唯一权威灵魂记忆。
-- `0_docs/STRUCTURE_AND_FILE_GUIDE.md`: 全项目结构和文件职责说明。
-- `0_docs/FILE_CATALOG.md`: 新增文件索引。
+- `docs/ARCHITECTURE.md`: 全项目结构、代码分层、每个模块是活的还是遗留（2026-09-18 起取代 `0_docs/`，不再维护 FILE_CATALOG，见 `docs/DECISIONS.md` D-029）。

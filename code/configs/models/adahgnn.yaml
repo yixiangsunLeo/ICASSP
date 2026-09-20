@@ -1,0 +1,58 @@
+# AdaHGNN — lab model EEG_AdaMSHyper (DeepHypergraph project_V4, 2026-01-16).
+#
+# `adahgnn`        : the vendored class, unmodified (`_official/models.py`; adapter.py, arch official).
+#                    Kernel 63, radix 2, dropout 0.5, shift @128 Hz stay hardcoded there. NOT run
+#                    (user decision 2026-09-20 17:38: the unadapted original is not needed).
+# `adahgnn@mi`     : AdaHGNN-MI — the motor-imagery adaptation (mi_model.py; design and audit in
+#                    docs/reports/PROPOSAL_adahgnn_mi_adaptation_2026-09-20.md, T0+T1+T2; D-040).
+# `adahgnn@mi_mix` : AdaHGNN-MI + same-class cross-trial Dirichlet mixup (source recipe p=0.5,
+#                    alpha=2, k=3; the source mixed across labels — we do not). DANN / NHC are off.
+#
+# `per_dataset.channel_set` names the montage yaml (code/configs/datasets/<set>.yaml) the MI
+# variant reads for its hemisphere-aware anatomical hierarchy; the official arch ignores it.
+name: "adahgnn"
+
+defaults:
+  d_model: 128
+  patch_size: 8
+  k: 5
+
+per_dataset:
+  wbci_shu_2c: {channel_set: wbci_shu}
+  wbci_shu_3c: {channel_set: wbci_shu}
+  shu:         {channel_set: shu}
+
+variants:
+  mi:
+    arch: mi
+    n_filters: 32            # F: shared temporal filters = node feature dim
+    kernel_sizes: [125, 63]  # 0.5 s / 0.25 s at 250 Hz (source 63/31 at 128 Hz)
+    patch_size: 16           # 64 ms
+    embed_dim: 32
+    k: 5
+    alpha: 3.0
+    hyper_num_scale2: 8
+    hyper_num_scale3: 3
+    dropout: 0.5
+    laplacian: true
+    temporal_attention: true
+    hidden: 128
+    mixup: false
+  mi_mix:
+    arch: mi
+    n_filters: 32
+    kernel_sizes: [125, 63]
+    patch_size: 16
+    embed_dim: 32
+    k: 5
+    alpha: 3.0
+    hyper_num_scale2: 8
+    hyper_num_scale3: 3
+    dropout: 0.5
+    laplacian: true
+    temporal_attention: true
+    hidden: 128
+    mixup: true
+    mixup_prob: 0.5
+    mixup_alpha: 2.0
+    mixup_k: 3

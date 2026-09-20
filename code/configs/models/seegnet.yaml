@@ -1,0 +1,40 @@
+# S-EEGNet — spiking port of EEGNet-8,2 (Lawhern et al. 2018; arl-eegmodels defaults).
+# Implementation: code/models/spiking/models.py::SpikingEEGNet.
+# The spiking *baseline*: the SNN literature on MI almost always spikes EEGNet, so this is
+# the reference the S-EEGNeX numbers are read against (same neuron, same T, same recipe).
+# Note: EEGNet has no non-linearity before its spatial conv, so the faithful port keeps
+# ~99% of its MACs analog — reported deliberately (energy table).
+name: "seegnet"
+
+defaults:
+  T: 4
+  neuron: "lif"
+  tau: 2.0
+  tau_min: null
+  tau_max: null
+  v_threshold: 1.0
+  hard_reset: true
+  deep_reset: "soft"
+  detach_reset: true
+  surrogate_alpha: 2.0
+  encoding: "repeat"
+  causal: false
+  readout: "membrane"
+  neuron_bn_init: true
+  dropout: 0.5
+  rate_reg_lambda: 0.001
+  rate_target: 0.10
+  # arl-eegmodels EEGNet-8,2
+  F1: 8
+  D: 2
+  F2: 16
+  kernLength: 64
+
+per_dataset: {}
+
+variants:
+  lif:      {}
+  plif:     {neuron: "plif"}
+  hplif:    {neuron: "hplif"}
+  s_plif:   {encoding: "stream", neuron: "plif"}
+  s_hplif:  {encoding: "stream", neuron: "hplif"}

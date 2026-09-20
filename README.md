@@ -1,112 +1,89 @@
 ---
-title: "EEG-MI Online 项目入口"
+title: "ICASSP 2027 — Spiking EEGNeX for cross-subject MI-EEG"
 tags:
-  - "#pipeline/5_dl_model"
   - "#modality/eeg"
+  - "#pipeline/5_dl_model"
+  - "#method/snn"
   - "#method/domain_generalization"
-created: "2026-06-10"
-updated: "2026-08-04"
+created: "2026-09-18"
+updated: "2026-09-18"
 status: "active"
 ---
 
-# EEG-MI Online
+# ICASSP 2027 · Spiking EEGNeX for Cross-Subject Motor Imagery
 
-> 多数据集运动想象 EEG 泛化研究。**当前主线（2026-08-04 学长重新定向）= 端到端基础模型 × 跨被试**：
-> 用 5 个 S4 / DINO-DualCD 模型在 WBCIC-SHU 与 SHU 上**分开**做端到端训练 + 跨被试评测。
-> 融合已完成可运行。**正式实验已跑四批（2026-08-07 ~ 08-24），结果见
-> [`docs/RESULTS_TRUTH.md`](docs/RESULTS_TRUTH.md)**（唯一事实来源）。
+> **截稿 2026-09-24 20:00（北京）= 09-23 23:59 AoE。** 在这个目录里打开 Cursor 就能工作：
+> 先读 [`AGENTS.md`](AGENTS.md)（规则与事实）→ [`docs/STATUS.md`](docs/STATUS.md)（现在做到哪、什么在跑）→
+> [`docs/PLAN_spiking_eegnex_icassp2027.md`](docs/PLAN_spiking_eegnex_icassp2027.md)（方案 v2）。
 
-## 0. 当前定位
+## 0. 一句话
 
-**主线：端到端基础模型 × 跨被试**（路线 = 根目录 `FOUNDATION_E2E_ROUTE_PLAN.md`）。学长交付的
-`models_eeg_foundation/` 5 个模型已融入框架：`code/models/eeg_foundation/` + 可断点续跑训练器
-`code/training/e2e_trainer.py`（每 cell 只存 `best.pt` + `last.pt`）+ 跨被试协议
-`code/experiments/cross_subject_protocols.py` + 双数据集 config，`tests/foundation/` 32 passed。
-**下一步卡在协议确认**：`4_experiments/CROSS_SUBJECT_PROTOCOL_MEMO.md` 里 7 个问题要发学长拍板
-（文献依据 `inbox/cross_subject_protocol_research.md`）。**协议确认前不产出任何被当作结果的数字。**
+把三个队列上都最强的 ANN（EEGNeX，58 k 参数）逐层脉冲化，**让 EEG 的采样轴直接当脉冲时间轴**，配无标签的被试级对齐
+（Euclidean Alignment + AdaBN），在 87 人 / 3 个跨被试队列上与已有的 **18 个 ANN 逐被试配对**比较：
+主张 **非劣性**（δ = 1pp）、**对齐 × 网络类型的交互**、以及 **EEGNet 量级的能耗**。方案经 SNN / EEG-BCI / 统计 / 领域主席四位
+"专家"评审修订后开跑；学长会自己改一版 EEGNeX，注册成一个 entry 即可进入同一张表。
 
-**已完成（保留只读）**：两数据集 Phase 0/1/2a/2b/2c 全部完成（WBCIC 4320 cells、SHU 7500 cells 全 ok，
-AI 分析已写，结果在 `4_experiments/{wbci_shu,shu}/prototype_drift/`）。核心结论：无学习统计对齐不足
-（均无方法过 +2pp）；跨 session 掉点主机制为 **within-class scatter 膨胀 / Fisher collapse（非 centroid
-collapse）**，cosine 几何优于 euclidean，FBCNet 几何异常。
-
-**Phase 3（跨 session 修复 / TTA）= paused，不是废弃**：`code/tta/`、`4_experiments/*/tta/`、
-`PHASE3_ROUTE_PLAN.md` 全部保留，工程上仍是 pretrained-model-ready（WBCIC full A0 complete）。
-等端到端 backbone 出来后可以把 Oracle/T3A 接上去。未运行的内容不写成已完成。
-
-## 1. 目录结构
+## 1. 目录
 
 ```text
-eeg-mi-online/
-├── 0_docs/                 # 文档中心（ARCHITECTURE / STATUS / FILE_CATALOG / operation_log）
-├── 1_session_drift/{wbci_shu,shu}/   # Phase 0 漂移诊断结果（数据集并列）
-├── 2_baseline/{wbci_shu,shu}/        # Phase 1/2a baseline + 2b alignment 结果
-├── 3_online_adaptation/{wbci_shu,shu}/  # 在线适应，future
-├── 4_experiments/{wbci_shu,shu}/     # Phase 2c+ 新实验入口
-├── 5_papers/{wbci_shu,shu}/          # 论文与汇报材料
-├── backup/                 # 旧代码/文档/历史产物/权重/日志归档
-├── code/                   # 代码框架，唯一人工入口 code/run.py
-├── scripts/slurm/          # Slurm 提交脚本（GPU 训练 / CPU 汇总）
-├── inbox/                  # 临时交接材料
-├── AGENTS.md               # 唯一灵魂记忆（先读）
-├── FOUNDATION_E2E_ROUTE_PLAN.md  # 当前主线路线：端到端基础模型 × 跨被试
-├── PHASE3_ROUTE_PLAN.md    # 上一条主线（跨 session 修复；paused）
-├── proposal.md             # 项目提案
-├── progress.md             # 进度日记（PROGRESS 角色）
-├── experiment_log.md       # 实验日志速查
-└── results.md              # 结果速查
+ICASSP/
+├── AGENTS.md                 # 唯一灵魂记忆：身份、已验证事实、规则、契约（先读）
+├── CLAUDE.md                 # Claude Code 入口 → AGENTS.md
+├── progress.md               # 逐日流水（最新在上）
+├── docs/
+│   ├── STATUS.md             # 现在做到哪、20 个作业的状态、下一步、倒计时
+│   ├── PLAN_spiking_eegnex_icassp2027.md   # 论文方案 v2（§0 评审采纳；§0.5 先导结果与主实验决定）
+│   ├── PRIOR_RESULTS.md      # 之前跑过什么：3 队列 × 18 ANN（SNN 的配对基线）
+│   ├── RESULTS_TRUTH.md      # WBCIC-SHU 3C 权威表
+│   ├── DECISIONS.md          # D-001.. 每个影响口径的决定
+│   ├── ARCHITECTURE.md       # 目录与代码分层、活/遗留标注
+│   ├── ICASSP2027_SUBMISSION.md            # 截稿、格式、ORCID、检查单、稿件骨架映射
+│   ├── PLAN_cross_subject_benchmark_and_fusion.md  # ANN 基线轮的协议与 27 条锁定决定
+│   ├── ANALYSIS_atcnet_and_adversarial.md  # 已结案方向的分析
+│   ├── CROSS_SUBJECT_PROTOCOL_MEMO.md / CROSS_SUBJECT_PROTOCOL_RESEARCH.md   # 协议问题清单 / 文献依据全文
+│   ├── reports/              # 发给学长的文档（2026-09-18 简报 + 报告）
+│   └── history/              # 关键会话摘录
+├── paper/                    # ICASSP 2027 官方模板 + main.tex + refs.bib + figures/ tables/
+├── code/                     # 训练框架；唯一入口 code/run.py；本轮新代码 code/models/spiking/
+├── scripts/                  # make_snn_configs / analyze_snn_round / summarize / slurm/{submit_snn.sh, bench_gpu.sbatch}
+├── tests/                    # pytest 106 项 + 1 skip（models/ + foundation/）
+├── outputs/  checkpoints/  logs/          # run 产物（gitignore）
+└── results_snapshot_2026-09-13/           # 只读归档：18 ANN 基线的表与 cells
 ```
 
-## 2. 运行入口
+## 2. 常用命令
 
 ```bash
-cd /path/to/this/repo   # 任意克隆路径
-python code/run.py --dry-run --config code/configs/experiments/phase1_baseline.yaml
+cd /share/home/yuan/SYX/ICASSP
+source /share/software/anaconda3/2024.10/etc/profile.d/conda.sh && conda activate mi_torch_cu118
+
+# 作业与进度
+squeue -u $USER -o '%.10i %.14j %.2t %.11M %R'
+find outputs/experiments/wbci_shu/snn_wbci2c_zs_lr1e4_v1/cells -name result.json | wc -l    # 目标 50
+# failures__<tag>.json 每个作业都会写（哪怕 0 失败），看的是 n_cells_failed 字段：
+python -c "import json,glob; [print(f, json.load(open(f)).get('n_cells_failed')) for f in sorted(glob.glob('outputs/experiments/*/snn_*_v1/failures__*.json'))]"
+
+# 提交（每组一卡、48 h 接力；重复提交同一命令 = 断点续跑）
+DRY_RUN=1 bash scripts/slurm/submit_snn.sh code/configs/experiments/snn_wbci2c_zs_lr1e4.yaml c2z \
+    "seegnex@s_hplif,seegnex@hplif" "eegnex,eegnet_official,seegnet@plif"
+
+# 分析（CPU，登录节点可跑）：预注册检验 + H1 + 能耗 + 与 18 个 ANN 配对
+python scripts/analyze_snn_round.py --dataset wbci_shu \
+    --run zs=outputs/experiments/wbci_shu/snn_wbci2c_zs_lr1e4_v1 \
+    --run eaz=outputs/experiments/wbci_shu/snn_wbci2c_eaz_lr1e4_v1 --aligned-arm eaz \
+    --bench results_snapshot_2026-09-13/experiments/wbci_shu/wbci_2c_cross_subject_bench_v1 \
+    --out outputs/analysis/snn_round/wbci_shu          # --aligned-arm eaz 必须给，否则脚本报错（H1 依赖它）
+
+# 测试
+pytest tests/models/test_spiking.py -q      # 13 项；全套 pytest tests/ -q 为 106 passed + 1 skipped（2026-09-18 剪枝后）
 ```
 
-`code/run.py` 已直连 `code/` 模块（含 Phase 0/1/2a/2b/2c runner），可直接训练与 `--summarize`。GPU 任务走 Slurm + `mi_torch_cu118`，先 smoke 再 full。本机数据路径写在 `code/configs/*.local.yaml`（见 `SETUP.md`）。
+## 3. 数据边界
 
-SHU 直接开跑（同一批 runner，仅 config 不同）：
+外部 raw / processed 路径由本机 `code/configs/paths.local.yaml` 配置（本集群只有这一份 local 文件），不进 Git；raw 只读。
+3C processed 数据在 `outputs/processed/wbci_shu_3c_mat_clean/`。换机见 [`SETUP.md`](SETUP.md)，复现见 [`REPRODUCE.md`](REPRODUCE.md)。
 
-```bash
-python code/run.py --config code/configs/experiments/shu_phase1_baseline.yaml --device cuda
-python code/run.py --config code/configs/experiments/shu_phase2b_alignment.yaml --device cuda
-python code/run.py --config code/configs/experiments/shu_phase2c_prototype_drift.yaml --device cuda
-```
+## 4. 血缘
 
-SHU 预处理（若需重生成）：`python scripts/preprocess_shu.py`。
-
-**端到端主线（跨被试，当前）**：
-
-```bash
-# 极小 CPU smoke（输出隔离到 *_smoke）
-python code/run.py --config code/configs/experiments/shu_foundation_cross_subject.yaml \
-    --models s4erp --folds 3 --folds-subset 0 --max-subjects 6 --max-epochs 2 \
-    --batch-size 32 --num-workers 0 --device cpu \
-    --out outputs/experiments/shu/foundation_cross_subject_smoke \
-    --ckpt-dir checkpoints/shu/foundation_cross_subject_smoke
-
-# GPU（Slurm）；重复执行同一条命令 = 断点续跑
-sbatch -J e2e_wbcic scripts/slurm/shu_gpu.sbatch \
-    code/configs/experiments/foundation_cross_subject.yaml
-```
-
-CPU 上 `s4erp` 单 epoch 约 12 分钟（1000 点 × 32ch 空间卷积是瓶颈），**正式 smoke 也要上 GPU 节点**。
-
-## 3. 必读文档
-
-| 文档 | 用途 |
-|:---|:---|
-| `AGENTS.md` | 唯一权威灵魂记忆。 |
-| `progress.md` | 进度日记。 |
-| `0_docs/ARCHITECTURE.md` | 目录结构 + 代码分层 + 文件职责。 |
-| `0_docs/STATUS.md` | 进度、能否跑、SHU 就绪、下一步、清理策略。 |
-| `0_docs/FILE_CATALOG.md` | 文件索引。 |
-
-## 4. 数据边界
-
-外部 raw / processed 路径由本机 `code/configs/paths.local.yaml`（及 `datasets/*.local.yaml`）配置，**不进 Git**。仓库内只有 `/CHANGE/ME/...` 占位。raw 只读；唯一允许写外部盘的位置是各数据集的 `processed/` 子树（若你的 local 配置指向共享盘 processed）。
-
-## 5. 上传 GitHub / 换机继续跑
-
-见根目录 [`SETUP.md`](SETUP.md)：克隆、环境、`paths.yaml` / `shu.yaml` 改路径、数据与冒烟命令。大文件（数据、权重、`outputs/`、`logs/`、`checkpoints/`、`backup/`）不进 Git。
+本仓库 = 2026-06 起的 `eeg-mi-online`（跨 session → 跨被试 → 18 模型 benchmark → SNN），2026-09-18 重命名为 `ICASSP`，
+git 历史完整；剪掉的跨 session 遗留在 `../_archive/eeg-mi-online_legacy_2026-09-18/`。姊妹项目 `../Benchmark`（EEG 基础模型 benchmark）截稿后再做。

@@ -1,0 +1,37 @@
+# MACHINE-LOCAL paths. Copy to code/configs/paths.local.yaml and fill.
+#   cp docs/handoff/PATHS_LOCAL.template.yaml code/configs/paths.local.yaml
+# NEVER commit the filled paths.local.yaml.
+#
+# Replace every <DATA_ROOT> with the directory that holds the copied processed
+# trees on THIS machine, e.g. /data/icassp or $HOME/icassp_data.
+# Replace nothing else. Relative values resolve against the repo root.
+
+raw_data:
+  # Must NOT contain /CHANGE/ME (load_paths raises). The directory itself does
+  # not need to exist for training (runners call load_paths(require_raw=False)).
+  shu_2c_root: "<DATA_ROOT>/WBCIC_SHU"
+  raw_subdir: "sourcedata/2C dataset"
+  derivatives_subdir: "derivatives/2C dataset_processeddata"
+
+processed_data:
+  paper_style_root: "outputs/processed_paper_style"
+  eog_ecg_clean_root: "<DATA_ROOT>/WBCIC_SHU/processed/eog_ecg_clean"
+
+shu:
+  raw_root: "<DATA_ROOT>/SHU"
+  npz_clean_root: "<DATA_ROOT>/SHU/processed/npz_clean"
+  manifest: "<DATA_ROOT>/SHU/processed/npz_clean/processed_manifest.csv"
+
+manifests:
+  raw_manifest: "manifests/shu_2c_raw_manifest.csv"
+  processed_manifest: "<DATA_ROOT>/WBCIC_SHU/processed/eog_ecg_clean/processed_manifest.csv"
+  shu_processed_manifest: "<DATA_ROOT>/SHU/processed/npz_clean/processed_manifest.csv"
+  # Repo-relative. The CSV *inside* still has absolute npz_path — rewrite those
+  # with scripts/repath_manifests.py after the 3C tree is in place.
+  wbci_3c_processed_manifest: "outputs/processed/wbci_shu_3c_mat_clean/processed_manifest.csv"
+
+splits:
+  dir: "splits"
+
+# Optional. First hit wins: $ICASSP_WEIGHTS_DIR, then this key, then <repo>/weights.
+pretrained_weights_dir: "weights"

@@ -1,0 +1,30 @@
+{
+  "friedman_stat": 612.4244401661767,
+  "friedman_p": 3.3298955506458843e-119,
+  "k": 18,
+  "N": 51,
+  "avg_ranks": {
+    "atcnet@noattn": 3.843137254901961,
+    "atcnet": 4.411764705882353,
+    "eegnex": 4.647058823529412,
+    "atcnet@nwin1": 4.745098039215686,
+    "atcnet@tcn8": 5.03921568627451,
+    "eeg_deformer": 5.980392156862745,
+    "deepconvnet": 6.088235294117647,
+    "eegnet_official": 6.450980392156863,
+    "s4erp": 9.215686274509803,
+    "s4erp_dw@f64d2": 10.254901960784315,
+    "s4erp_dw@f16d8": 10.401960784313726,
+    "s4erp_dw@f16d2p": 11.519607843137255,
+    "dualcd_transformer": 12.833333333333334,
+    "dualcd_s4_flatten": 13.27450980392157,
+    "dualcd_s4_timepatch": 14.27450980392157,
+    "atcnet_s4": 14.676470588235293,
+    "fbcnet": 15.931372549019608,
+    "atcnet_s4@noattn": 17.41176470588235
+  },
+  "critical_difference": 3.6881966816172307,
+  "alpha": 0.05,
+  "higher_is_better": true,
+  "dropped_models": []
+}

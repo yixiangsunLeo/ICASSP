@@ -1,0 +1,76 @@
+experiment:
+  name: foundation_cross_subject
+  source_config: configs/experiments/snn_shu_eaz_lr1e3.yaml
+run_id: snn_shu_eaz_lr1e3_v1
+data:
+  name: shu
+  manifest: shu_processed_manifest
+  status_filter:
+  - ok
+  n_channels: 32
+  n_times: 1000
+  n_classes: 2
+  sfreq: 250
+models:
+- eegnex
+- eegnet_official
+- seegnex@hplif
+- seegnex@s_lif
+- seegnex@s_plif
+- seegnex@s_hplif
+- seegnet@plif
+cross_subject:
+  protocol: kfold_subject
+  n_folds: 5
+  val_mode: subjects
+  n_val_subjects: 5
+  split_seeds:
+  - 41
+  - 42
+train:
+  optimizer: adam
+  lr: 0.001
+  batch_size: 128
+  max_epochs: 500
+  weight_decay: 0.0
+  scheduler: none
+  grad_clip_norm: 0.0
+  monitor: macro_f1
+  monitor_mode: max
+  early_stopping_patience: 25
+  normalization: ea_session+per_sample_zscore
+  num_workers: 2
+  amp: false
+  device: cuda
+  seeds:
+  - 0
+  curves: false
+  train_eval_max_trials: 2000
+  micro_batch_per_model:
+    seegnex@hplif: 64
+    seegnex@plif: 64
+    seegnex@lif: 64
+    seegnex@plif_t8: 32
+    seegnet@plif: 64
+model_params: {}
+eval:
+  metrics:
+  - accuracy
+  - macro_f1
+  - auc
+  - balanced_accuracy
+  - cohen_kappa
+  calibration_metrics:
+  - nll
+  - brier
+  - ece
+  report_scope: per_test_subject
+  adabn: true
+checkpoints:
+  keep:
+  - best
+  - last
+  resume: true
+output:
+  output_dir: outputs/experiments/shu/snn_shu_eaz_lr1e3_v1
+  checkpoint_dir: checkpoints/shu/snn_shu_eaz_lr1e3_v1

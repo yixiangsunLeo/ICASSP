@@ -1,13 +1,29 @@
 ---
-description: Modular (layered) code architecture rules
+description: Layered code architecture and model-registration rules
 globs:
   - "code/**/*.py"
   - "code/configs/**/*.yaml"
+  - "scripts/**/*.py"
+  - "tests/**/*.py"
 alwaysApply: false
 ---
 
-# Code Architecture
+# Code architecture
 
-`code/run.py` is the only manual run entry. `code/configs/datasets` describes datasets, `code/configs/models` describes model hyperparameters, and `code/configs/experiments` describes runnable phases.
-
-Add a dataset in `code/datasets` + dataset YAML. Add a model in `code/models` + model YAML. Add an alignment/adaptation method in `code/methods`. Add an experiment in `code/experiments` + experiment YAML. Update the local README and `0_docs/FILE_CATALOG.md` every time.
+- Single human entry: `python code/run.py --config code/configs/experiments/<name>.yaml [--models a,b@variant
+  --split-seeds 41 --tag-suffix X --device cuda]`. Runner for this round: `foundation_cross_subject`
+  (`code/experiments/cross_subject_protocols.py`) + `code/training/e2e_trainer.py`.
+- Model aliases `name@variant` resolve through `code/models/model_specs.py` (single source of parameters);
+  unknown aliases must raise. This round's entries: `eegnex`, `eegnet_official`, `seegnex@{hplif, s_lif,
+  s_plif, s_hplif, s_hplif_afe, s_hplif_spk, s_hplif_noinit, s_hplif_causal, s_hplif_hard, s_hplif_noreg,
+  s_hplif_all}`, `seegnet@plif`.
+- Model-specific training behaviour goes into hooks (`uses_custom_loss` / `training_step` /
+  `after_optimizer_step`), never a forked trainer. `code/training/trainer.py` is frozen. All models return
+  `{logits, features, confidence}`; spiking models additionally implement `describe()` and `pop_spike_stats()`.
+- New model = `code/models/<name>/` + `code/configs/models/<name>.yaml` + registration in
+  `code/models/registry.py` + a test in `tests/models/`. New experiment grid = edit
+  `scripts/make_snn_configs.py` and regenerate; do not hand-edit the 24 `snn_*.yaml` (6 of them are the main run).
+- Deprecated models (`s4erp_adv`, `atcnet_adv`, `dualcd_s4_pos`, in-house `eegnet`, `cap_eegnet`) and the
+  cross-session-era modules (`code/tta/`, `code/methods/`, phase runners) stay in the tree: `docs/RESULTS_TRUTH.md`
+  numbers and `tests/tta` depend on them.
+- `PROJECT_ROOT` is derived from `__file__` (`code/utils/paths.py`), so the repo works from any path.

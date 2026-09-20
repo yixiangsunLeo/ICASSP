@@ -1,0 +1,281 @@
+{
+  "dataset": "wbci_shu_3c",
+  "protocol": "loso",
+  "n_folds": 11,
+  "val_mode": "subjects",
+  "split_seed": 0,
+  "train_sessions": [],
+  "val_sessions": [],
+  "n_subjects": 11,
+  "normalization": "per_sample_zscore",
+  "subjects": [
+    "sub-001",
+    "sub-002",
+    "sub-003",
+    "sub-004",
+    "sub-005",
+    "sub-006",
+    "sub-007",
+    "sub-008",
+    "sub-009",
+    "sub-010",
+    "sub-011"
+  ],
+  "trials_per_subject": {
+    "sub-001": 900,
+    "sub-002": 900,
+    "sub-003": 900,
+    "sub-004": 900,
+    "sub-005": 900,
+    "sub-006": 900,
+    "sub-007": 900,
+    "sub-008": 900,
+    "sub-009": 900,
+    "sub-010": 899,
+    "sub-011": 900
+  },
+  "folds": [
+    {
+      "fold": 0,
+      "train_subjects": [
+        "sub-002",
+        "sub-003",
+        "sub-004",
+        "sub-005",
+        "sub-006",
+        "sub-007",
+        "sub-010",
+        "sub-011"
+      ],
+      "val_subjects": [
+        "sub-008",
+        "sub-009"
+      ],
+      "test_subjects": [
+        "sub-001"
+      ],
+      "train_sessions": null,
+      "val_sessions": null
+    },
+    {
+      "fold": 1,
+      "train_subjects": [
+        "sub-001",
+        "sub-003",
+        "sub-006",
+        "sub-007",
+        "sub-008",
+        "sub-009",
+        "sub-010",
+        "sub-011"
+      ],
+      "val_subjects": [
+        "sub-004",
+        "sub-005"
+      ],
+      "test_subjects": [
+        "sub-002"
+      ],
+      "train_sessions": null,
+      "val_sessions": null
+    },
+    {
+      "fold": 2,
+      "train_subjects": [
+        "sub-002",
+        "sub-004",
+        "sub-005",
+        "sub-006",
+        "sub-007",
+        "sub-008",
+        "sub-009",
+        "sub-010"
+      ],
+      "val_subjects": [
+        "sub-001",
+        "sub-011"
+      ],
+      "test_subjects": [
+        "sub-003"
+      ],
+      "train_sessions": null,
+      "val_sessions": null
+    },
+    {
+      "fold": 3,
+      "train_subjects": [
+        "sub-001",
+        "sub-002",
+        "sub-003",
+        "sub-005",
+        "sub-006",
+        "sub-007",
+        "sub-010",
+        "sub-011"
+      ],
+      "val_subjects": [
+        "sub-008",
+        "sub-009"
+      ],
+      "test_subjects": [
+        "sub-004"
+      ],
+      "train_sessions": null,
+      "val_sessions": null
+    },
+    {
+      "fold": 4,
+      "train_subjects": [
+        "sub-001",
+        "sub-002",
+        "sub-003",
+        "sub-004",
+        "sub-007",
+        "sub-009",
+        "sub-010",
+        "sub-011"
+      ],
+      "val_subjects": [
+        "sub-006",
+        "sub-008"
+      ],
+      "test_subjects": [
+        "sub-005"
+      ],
+      "train_sessions": null,
+      "val_sessions": null
+    },
+    {
+      "fold": 5,
+      "train_subjects": [
+        "sub-001",
+        "sub-002",
+        "sub-003",
+        "sub-004",
+        "sub-005",
+        "sub-007",
+        "sub-009",
+        "sub-010"
+      ],
+      "val_subjects": [
+        "sub-008",
+        "sub-011"
+      ],
+      "test_subjects": [
+        "sub-006"
+      ],
+      "train_sessions": null,
+      "val_sessions": null
+    },
+    {
+      "fold": 6,
+      "train_subjects": [
+        "sub-001",
+        "sub-002",
+        "sub-003",
+        "sub-004",
+        "sub-005",
+        "sub-008",
+        "sub-009",
+        "sub-010"
+      ],
+      "val_subjects": [
+        "sub-006",
+        "sub-011"
+      ],
+      "test_subjects": [
+        "sub-007"
+      ],
+      "train_sessions": null,
+      "val_sessions": null
+    },
+    {
+      "fold": 7,
+      "train_subjects": [
+        "sub-001",
+        "sub-002",
+        "sub-003",
+        "sub-004",
+        "sub-005",
+        "sub-006",
+        "sub-010",
+        "sub-011"
+      ],
+      "val_subjects": [
+        "sub-007",
+        "sub-009"
+      ],
+      "test_subjects": [
+        "sub-008"
+      ],
+      "train_sessions": null,
+      "val_sessions": null
+    },
+    {
+      "fold": 8,
+      "train_subjects": [
+        "sub-001",
+        "sub-002",
+        "sub-003",
+        "sub-005",
+        "sub-006",
+        "sub-007",
+        "sub-008",
+        "sub-011"
+      ],
+      "val_subjects": [
+        "sub-004",
+        "sub-010"
+      ],
+      "test_subjects": [
+        "sub-009"
+      ],
+      "train_sessions": null,
+      "val_sessions": null
+    },
+    {
+      "fold": 9,
+      "train_subjects": [
+        "sub-002",
+        "sub-003",
+        "sub-004",
+        "sub-005",
+        "sub-006",
+        "sub-007",
+        "sub-009",
+        "sub-011"
+      ],
+      "val_subjects": [
+        "sub-001",
+        "sub-008"
+      ],
+      "test_subjects": [
+        "sub-010"
+      ],
+      "train_sessions": null,
+      "val_sessions": null
+    },
+    {
+      "fold": 10,
+      "train_subjects": [
+        "sub-001",
+        "sub-003",
+        "sub-004",
+        "sub-005",
+        "sub-006",
+        "sub-007",
+        "sub-009",
+        "sub-010"
+      ],
+      "val_subjects": [
+        "sub-002",
+        "sub-008"
+      ],
+      "test_subjects": [
+        "sub-011"
+      ],
+      "train_sessions": null,
+      "val_sessions": null
+    }
+  ]
+}

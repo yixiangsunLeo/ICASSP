@@ -1,10 +1,10 @@
 ---
-title: "Reproducing the cross-subject benchmark and the ATCNet x S4ERP fusion"
+title: "Reproducing the cross-subject benchmark, the ATCNet x S4ERP fusion, and the spiking round"
 tags:
   - "#pipeline/5_dl_model"
   - "#modality/eeg"
 created: "2026-08-27"
-updated: "2026-08-27"
+updated: "2026-09-18"
 status: "active"
 ---
 
@@ -27,7 +27,7 @@ The design rationale is in [`docs/PLAN_cross_subject_benchmark_and_fusion.md`](d
 | fusion B | `atcnet_s4` | ATCNet + one shared causal SSM instead of 5 TCNs |
 | ablations | `atcnet@tcn8`, `atcnet@nwin1`, `atcnet@noattn` | which ATCNet component carries its advantage |
 
-All 17 run in **one sweep per dataset** on identical `(split_seed, fold, subject)` triples.
+All 18 run in **one sweep per dataset** on identical `(split_seed, fold, subject)` triples.
 That is not a convenience: paired per-subject tests are the only way to detect differences
 of a few percentage points against a 10pp between-subject spread, and pairing requires the
 identical splits.
@@ -51,8 +51,11 @@ No EEG is shipped with this repository. Obtain both datasets from their sources
 
 ```bash
 cp code/configs/paths.example.yaml code/configs/paths.local.yaml   # then edit the paths
-python scripts/preprocess_wbci_2c.py     # -> processed/eog_ecg_clean/processed_manifest.csv
-python scripts/preprocess_shu.py         # -> processed/npz_clean/processed_manifest.csv
+# WBCIC-SHU 2C: the `eog_ecg_clean` npz tree + processed_manifest.csv is produced by
+# code/preprocessing/{pipeline,eog_ecg_clean}.py from the provider's BIDS derivatives (see code/preprocessing/README.md);
+# on this cluster it already exists at /share/workspace2/moto_imagination/WBCIC_SHU/processed/eog_ecg_clean/.
+python scripts/preprocess_shu.py         # SHU 2022 -> processed/npz_clean/processed_manifest.csv
+python scripts/preprocess_wbci_3c.py     # WBCIC-SHU 3C -> outputs/processed/wbci_shu_3c_mat_clean/ (~7 min)
 ```
 
 Expected manifests (verify before training — a wrong manifest is the single most expensive
@@ -153,11 +156,11 @@ logic skips finished cells and continues an interrupted one from `last.pt`, so a
 exceed the 48 h wall clock. Re-running the exact same command is always safe.
 
 ```bash
-# monitor
+# monitor (the 2026-08/09 bench logs were deleted on 09-13; the pattern below is what a re-run would produce)
 squeue -u $USER -o '%.10i %.14j %.2t %.11M %.11L %R'
 tail -f logs/slurm/b2c_g4_1-*.out
 
-# progress
+# progress (a re-run writes here; the completed 2026-09 sweep lives read-only in results_snapshot_2026-09-13/)
 find outputs/experiments/wbci_shu/wbci_2c_cross_subject_bench_v1/cells -name result.json | wc -l   # -> 180
 
 # if gpu2node is full and a job sits PENDING (Resources)
@@ -168,14 +171,17 @@ One partition at a time: this cluster pins a partition in the association, so a 
 (`partition=gpu2node,gpu3node`) is rejected with "Multiple partition job request not
 supported". Only jobs that are still PENDING can be moved.
 
-Anything that failed is in `<out>/failures.json`, not buried in the Slurm logs.
+Anything that failed is in `<out>/failures__<tag>.json` (written by every job, `n_cells_failed`
+tells you whether anything actually failed), not buried in the Slurm logs.
 
 ## 6. Tables, statistics, figures
 
 ```bash
+# the completed sweep is read-only under results_snapshot_2026-09-13/ (a re-run would be under outputs/)
 python scripts/summarize_cross_subject.py \
-  --run outputs/experiments/wbci_shu/wbci_2c_cross_subject_bench_v1 \
-  --run outputs/experiments/shu/shu_cross_subject_bench_v1
+  --run results_snapshot_2026-09-13/experiments/wbci_shu/wbci_2c_cross_subject_bench_v1 \
+  --run results_snapshot_2026-09-13/experiments/shu/shu_cross_subject_bench_v1 \
+  --out-dir outputs/analysis/bench_tables
 ```
 
 Per run: `tables/{per_cell,per_model,per_subject,coverage,paired_tests,variant_selection}.csv`,
@@ -216,3 +222,41 @@ Three things to read carefully:
 pytest tests/ -q
 pytest tests/models -q            # the fusion models, alias resolution, param counts
 ```
+
+## 9. Spiking round (ICASSP 2027, 2026-09-18 →)
+
+Design and decisions: `docs/PLAN_spiking_eegnex_icassp2027.md` (§0.5 pilot results), `docs/DECISIONS.md`
+D-001–D-026. The benchmark tables above are the paired ANN baselines; they now live read-only in
+`results_snapshot_2026-09-13/experiments/…`.
+
+```bash
+# configs (24 files = {shu,wbci2c,wbci3c} x {zs,ea,eamu,eaz} x {lr1e3,lr1e4}; edit the grid in the generator, never the YAMLs)
+python scripts/make_snn_configs.py
+
+# submit one config as N single-GPU groups, each a 48 h relay chain (DRY_RUN=1 to preview)
+bash scripts/slurm/submit_snn.sh code/configs/experiments/snn_wbci2c_zs_lr1e4.yaml  c2z \
+     "seegnex@s_hplif,seegnex@hplif" "eegnex,eegnet_official,seegnet@plif"
+bash scripts/slurm/submit_snn.sh code/configs/experiments/snn_wbci2c_eaz_lr1e4.yaml c2e \
+     "seegnex@s_hplif,seegnex@hplif" "eegnex,eegnet_official,seegnet@plif"
+PARTITION=gpu3node bash scripts/slurm/submit_snn.sh code/configs/experiments/snn_wbci3c_zs_lr1e4.yaml c3z \
+     "eegnex,eegnet_official,seegnex@hplif,seegnex@s_hplif,seegnet@plif"
+# … SHU adds seegnex@s_lif,seegnex@s_plif (H3). Job ids -> logs/slurm/snn_<tag>_job_ids.txt
+
+# analysis: pre-registered paired tests, H1 difference-of-differences, energy, Friedman; +bench pairs the 18 ANNs
+python scripts/analyze_snn_round.py --dataset wbci_shu \
+    --run zs=outputs/experiments/wbci_shu/snn_wbci2c_zs_lr1e4_v1 \
+    --run eaz=outputs/experiments/wbci_shu/snn_wbci2c_eaz_lr1e4_v1 --aligned-arm eaz \
+    --bench results_snapshot_2026-09-13/experiments/wbci_shu/wbci_2c_cross_subject_bench_v1 \
+    --out outputs/analysis/snn_round/wbci_shu
+# `--aligned-arm eaz` maps the eaz run onto the canonical role `ea` that the pre-registered family and the
+# H1 interaction are written against; without it the script now aborts (it used to write a report without H1).
+pytest tests/models/test_spiking.py -q      # 13 tests: neuron numerics, EA whitening, all variants fwd/bwd, energy
+pytest tests -q                             # whole suite after the 2026-09-18 prune: 106 passed, 1 skipped
+```
+
+Expected cell counts: 2C 50 per arm (5 entries × 5 folds × 2 splits); 3C 55 per arm (5 × 11 LOSO);
+SHU 70 per arm (7 × 5 × 2). Only the lr 1e-4 runs enter the final SHU table (`snn_shu_zs_lr1e4_v1` split-41
+pilot cells included — renamed to `__split41__` so job 71034 skips them, D-030). The lr 1e-3 pilot arms
+(`snn_shu_{zs,ea,eamu,eaz}_lr1e3_v1`) are a separate pilot/ablation table: the afe / spk / noinit ablations exist
+**only at lr 1e-3** and are paired against the lr 1e-3 S-EEGNeX-S. Pilot analyses:
+`outputs/analysis/snn_round/shu_pilot_lr1e4/` and `shu_pilot_lr1e3/` (regenerated 2026-09-18 with the arm mapping).

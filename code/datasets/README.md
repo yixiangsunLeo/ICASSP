@@ -26,5 +26,4 @@ status: "active"
 ## 4. Related Files
 
 - `AGENTS.md`: 唯一权威灵魂记忆。
-- `0_docs/STRUCTURE_AND_FILE_GUIDE.md`: 全项目结构和文件职责说明。
-- `0_docs/FILE_CATALOG.md`: 新增文件索引。
+- `docs/ARCHITECTURE.md`: 全项目结构、代码分层、每个模块是活的还是遗留（2026-09-18 起取代 `0_docs/`，不再维护 FILE_CATALOG，见 `docs/DECISIONS.md` D-029）。

@@ -33,6 +33,15 @@ one comes from **its own authors' official repository** (never a third-party rei
 ``eegnet`` (below) is this project's own Phase 0-2c EEGNet and is NOT the same code as
 ``eegnet_official``; keep them apart when comparing against published numbers.
 
+External 2024-2025 baselines (``code/models/external/``, decision D-034; official code
+vendored per model, pretrained weights loaded from ``weights/``). They are **lazily
+imported** — only when one of them is requested — so their optional dependencies can never
+break the registry for the other models:
+
+  * ``tcformer`` -> TCFormer (Altaheri 2025)     * ``labram``  -> LaBraM-base (Jiang 2024)
+  * ``eegpt``    -> EEGPT large (Wang 2024)      * ``cbramod`` -> CBraMod (Wang 2025)
+  * ``adahgnn``  -> AdaHGNN / EEG-AdaMSHyper (DeepHypergraph project_V4; D-037)
+
 Structural hyperparameters come from ``configs/session_model_compare.yaml``
 ``model_params.<name>``; data dims (n_channels/n_times/n_classes/sfreq) are passed
 explicitly. Unknown params for a model are ignored with a warning (so one shared
@@ -54,10 +63,12 @@ from .deepconvnet import DeepConvNet, DeepConvNetConfig
 from .eeg_foundation.adapter import VARIANT_NAMES as FOUNDATION_MODEL_NAMES
 from .eeg_foundation.adapter import EEGFoundationConfig, build_eeg_foundation
 from .eegnet import EEGNetClassifier, EEGNetConfig
+from .external import EXTERNAL_MODEL_NAMES  # names only; adapters are imported on demand
 from .fbcnet import FBCNet, FBCNetConfig
 from .model_specs import split_alias
 from .paper_baselines.adapter import BASELINE_NAMES as PAPER_BASELINE_NAMES
 from .paper_baselines.adapter import PaperBaselineConfig, build_paper_baseline
+from .spiking.adapter import SPIKING_MODEL_NAMES, SpikingConfig, build_spiking
 
 logger = get_logger("models.registry")
 
@@ -66,7 +77,8 @@ PUBLISHED_MODEL_NAMES: List[str] = ["atcnet"] + list(PAPER_BASELINE_NAMES)
 #: Ours, but built on a published backbone rather than the S4/DINO family.
 DERIVED_MODEL_NAMES: List[str] = ["atcnet_adv", "atcnet_s4"]
 MODEL_NAMES: List[str] = (BASELINE_MODEL_NAMES + list(FOUNDATION_MODEL_NAMES)
-                          + PUBLISHED_MODEL_NAMES + DERIVED_MODEL_NAMES)
+                          + PUBLISHED_MODEL_NAMES + DERIVED_MODEL_NAMES
+                          + list(SPIKING_MODEL_NAMES) + list(EXTERNAL_MODEL_NAMES))
 
 #: The canonical cross-subject comparison roster (18 entries once aliases are expanded).
 #: Anything outside this list is either deprecated (see ``DEPRECATED_MODELS``) or a
@@ -170,6 +182,18 @@ def build_model(
         p = {k: v for k, v in _select(PaperBaselineConfig, params).items()
              if k not in ("variant", "n_channels", "n_times", "n_classes", "sfreq")}
         return build_paper_baseline(key, **base, sfreq=float(sfreq), params=p)
+    if key in SPIKING_MODEL_NAMES:
+        p = {k: v for k, v in _select(SpikingConfig, params).items()
+             if k not in ("variant", "n_channels", "n_times", "n_classes", "sfreq")}
+        return build_spiking(key, **base, sfreq=float(sfreq), params=p)
+    if key in EXTERNAL_MODEL_NAMES:
+        # Lazy: pulls in `code.models.external.<key>.adapter` (and its deps) only now.
+        # Each adapter filters/warns on unknown params itself.
+        from .external import build_external
+
+        p = {k: v for k, v in params.items()
+             if k not in ("variant", "n_channels", "n_times", "n_classes", "sfreq")}
+        return build_external(key, **base, sfreq=float(sfreq), params=p)
     if key in FOUNDATION_MODEL_NAMES:
         # These need sfreq (DINO band-pass views + temporal-bin pooling boundaries).
         return build_eeg_foundation(key, **base, sfreq=sfreq,

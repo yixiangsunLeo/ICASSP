@@ -1,19 +1,57 @@
 # ===== raw data: NEVER in this repo (external, path from configs/paths.yaml) =====
 /data/
 
-# ===== run artifacts & processed data (processed_* lives under outputs/) =====
+# ===== run artifacts (processed npz lives under outputs/processed — stay out) =====
+# Default-deny, then re-include only small text results so 3090 ↔ 4090 can sync
+# via GitHub. Binary rules (*.pt *.npz) later in this file win over these negations.
 /outputs/*
+!/outputs/.gitkeep
+!/outputs/analysis/
+!/outputs/experiments/
+/outputs/experiments/**
+!/outputs/experiments/**/
+!/outputs/experiments/**/result.json
+!/outputs/experiments/**/failures__*.json
+!/outputs/experiments/**/resolved_config__*.yaml
+!/outputs/experiments/**/resolved_model_params__*.json
+!/outputs/experiments/**/meta_cross_subject__*.json
+!/outputs/experiments/**/cross_subject_folds__*.json
+/outputs/experiments/_smoke/**
+/outputs/analysis/**
+!/outputs/analysis/**/
+!/outputs/analysis/**/*.csv
+!/outputs/analysis/**/*.md
 /logs/*
 /checkpoints/*
-!/outputs/.gitkeep
 !/logs/.gitkeep
 !/checkpoints/.gitkeep
 wandb/
 runs/
 slog/
 
-# ===== local archive (large; keep on disk, do not push) =====
-/backup/*
+# ===== pretrained weights (LaBraM / EEGPT / CBraMod) — never in git =====
+# 4090: this path is a symlink to ../Benchmark/weights. 3090: make a real dir
+# and copy the three files (sha256 in code/models/external/README.md / HANDOFF.md).
+/weights
+/weights/*
+
+# ===== ANN bench snapshot: README + tables + cells/*/result.json (for --bench) =====
+# predictions.npz and curve PNGs stay on disk (*.npz / later rules).
+/results_snapshot_*/*
+!/results_snapshot_*/README.md
+!/results_snapshot_*/experiments/
+!/results_snapshot_*/experiments/*/
+!/results_snapshot_*/experiments/*/*/
+/results_snapshot_*/experiments/*/*/*
+!/results_snapshot_*/experiments/*/*/tables/
+!/results_snapshot_*/experiments/*/*/tables/**
+!/results_snapshot_*/experiments/*/*/cells/
+/results_snapshot_*/experiments/*/*/cells/**
+!/results_snapshot_*/experiments/*/*/cells/*/
+!/results_snapshot_*/experiments/*/*/cells/*/result.json
+
+# senior's WeChat screenshots (docs/history/assets): keep on disk, never push
+/docs/history/assets/*.png
 
 # ===== generated manifests & splits (contain absolute server paths) =====
 /manifests/*.csv
@@ -68,3 +106,16 @@ venv/
 # ===== slurm / job noise =====
 *.out
 *.err
+
+# ===== paper (ICASSP 2027): keep sources, official kit PDFs + vector figures, drop build artefacts =====
+!/paper/figures/*.pdf
+!/paper/official_kit/*.pdf
+/paper/main.pdf
+/paper/*.aux
+/paper/*.bbl
+/paper/*.blg
+/paper/*.log
+/paper/*.out
+/paper/*.fls
+/paper/*.fdb_latexmk
+/paper/*.synctex.gz

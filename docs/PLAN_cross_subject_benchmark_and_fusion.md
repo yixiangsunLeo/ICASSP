@@ -11,7 +11,13 @@ status: "p0_done_awaiting_p1"
 
 # 跨被试 benchmark 与 ATCNet×S4ERP 融合 · 执行计划
 
-> **状态：P0 已完成（代码就绪，134 个测试全过），等待 P1 smoke 的开工指令。**
+> **2026-09-18 阅读说明**：本计划的 18 条目实验已于 2026-08~09 全部跑完（结果见 `docs/PRIOR_RESULTS.md`），
+> 这里保留它是因为 **§0 的 27 条锁定决定（B-1..27）与 §4 协议就是 ICASSP SNN 轮的配对基线口径**。
+> 文中要求更新 `0_docs/FILE_CATALOG.md / operation_log.md / 0_docs/STATUS.md` 的指令已被 `docs/DECISIONS.md` D-029 取代
+> （四份活文档：`AGENTS.md`、`docs/STATUS.md`、`progress.md`、`docs/DECISIONS.md`）；`4_experiments/CROSS_SUBJECT_PROTOCOL_MEMO.md`
+> 现为 `docs/CROSS_SUBJECT_PROTOCOL_MEMO.md`；其余 `0_docs/ 4_experiments/` 引用指向 `../_archive/eeg-mi-online_legacy_2026-09-18/`。
+>
+> **状态（2026-08-27 原文）：P0 已完成（代码就绪，134 个测试全过），等待 P1 smoke 的开工指令。**
 > **未跑任何 GPU 实验。** P0 的落地清单与实测参数量见 §8-P0 的"已完成"标注。
 >
 > **P0 阶段的实测修正（2026-08-27）**：
@@ -837,7 +843,7 @@ P0 已完成，**下一步是 P1 smoke**。
 `scripts/summarize_cross_subject.py`、`code/configs/models/*.yaml`。
 
 **只读引用**：`docs/RESULTS_TRUTH.md`、`docs/ANALYSIS_atcnet_and_adversarial.md`、
-`4_experiments/CROSS_SUBJECT_PROTOCOL_MEMO.md`、`AGENTS.md`。
+`docs/CROSS_SUBJECT_PROTOCOL_MEMO.md`（原 `4_experiments/`）、`AGENTS.md`。
 
 **参考文献**：
 - Yang et al., *Sci Data* 12:488 (2025) — WBCIC-SHU，doi:10.1038/s41597-025-04826-y

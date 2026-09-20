@@ -1,0 +1,11 @@
+# AdaHGNN-MI (D-040): one GPU job per cohort, two processes per GPU (the adapted model and its
+# same-class-mixup arm; ~0.1 M params, ~5 GB activations each at batch 128).
+# Cells land in snn_<ds>_zs_lr1e4_v1 as adahgnn-mi__* / adahgnn-mi_mix__*.
+# Re-running this plan is always safe (finished cells skip, interrupted cells resume from last.pt).
+#
+#   N_LINKS=2 IDS_FILE=logs/slurm/bl_adahgnn_job_ids.txt NICE=50 \
+#     bash scripts/slurm/submit_baselines.sh scripts/slurm/baselines_plan_adahgnn.txt
+
+bl2c_adahgnn  ; code/configs/experiments/bl_wbci2c_adahgnn_zs_lr1e4.yaml|adahgnn@mi|bl2c_adahgnn_mi ; code/configs/experiments/bl_wbci2c_adahgnn_zs_lr1e4.yaml|adahgnn@mi_mix|bl2c_adahgnn_mix
+blsh_adahgnn  ; code/configs/experiments/bl_shu_adahgnn_zs_lr1e4.yaml|adahgnn@mi|blsh_adahgnn_mi ; code/configs/experiments/bl_shu_adahgnn_zs_lr1e4.yaml|adahgnn@mi_mix|blsh_adahgnn_mix
+bl3c_adahgnn  ; code/configs/experiments/bl_wbci3c_adahgnn_zs_lr1e4.yaml|adahgnn@mi|bl3c_adahgnn_mi ; code/configs/experiments/bl_wbci3c_adahgnn_zs_lr1e4.yaml|adahgnn@mi_mix|bl3c_adahgnn_mix

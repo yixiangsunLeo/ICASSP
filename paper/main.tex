@@ -1,0 +1,233 @@
+% ICASSP 2027 manuscript — FORMAT SKELETON ONLY (2026-09-18).
+% Uses the official kit in this directory: spconf.sty + IEEEbib.bst (downloaded 2026-09-18).
+% The section layout mirrors the plan v2 (docs/PLAN_spiking_eegnex_icassp2027.md §6) as ONE candidate structure.
+% Title, framing, which experiments/tables go in, and all prose are decided by the senior author; nothing here is
+% adopted until then. No result number has been filled in.
+% RULES (see AGENTS.md §7): every number traces to one CSV row under outputs/analysis/ or
+% results_snapshot_2026-09-13/**/tables/; two main tables are never mixed; no energy multiplier in the title;
+% forbidden phrasings listed in .cursor/rules/40-paper.mdc.
+% Placeholders are marked \todo{...}; remove the \todo macro output before submission.
+% --------------------------------------------------------------------------
+\documentclass{article}
+\usepackage{spconf,amsmath,graphicx,hyperref}
+\usepackage{booktabs,multirow}
+\usepackage{xcolor}
+\newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
+
+% Notation
+\def\x{{\mathbf x}}
+\def\R{{\mathbf R}}
+
+% Title: all caps is applied by the style file.
+% 题目、框架、选用哪些实验 —— 由学长决定后再填。下面只是模板格式骨架，不代表任何已定的论文结论。
+\title{\todo{TITLE — to be decided by the senior author}}
+
+% Single-blind: real names and affiliations. Multiple affiliations: use \twoauthors (see official_kit/Template.tex).
+\name{\todo{Author list in agreed order}\thanks{\todo{Funding.} Portions of the code and text were drafted with the assistance of an AI coding agent (Cursor); all experiments, analyses and claims were verified by the authors.}}
+\address{\todo{Affiliation(s), city, country}}
+
+\begin{document}
+%\ninept
+\maketitle
+
+\begin{abstract}
+% 100–150 words. Write only after the senior author has fixed the story and the experiment set.
+% Candidate framing from the plan v2 (docs/PLAN_spiking_eegnex_icassp2027.md §0.3) is NOT adopted here.
+\todo{Abstract — after the senior author decides the framing and which experiments go in.}
+\end{abstract}
+
+\begin{keywords}
+\todo{Keywords — after the framing is decided}
+\end{keywords}
+
+% --------------------------------------------------------------------------
+\section{Introduction}
+\label{sec:intro}
+% Argument (PLAN §1): (1) variance is in subjects, not models — own evidence (docs/PRIOR_RESULTS.md §3.1):
+%   top-8 within 1.0 pp, SD 12 pp, 67 M-param DINO models at the bottom, 3 k-param EEGNet within 1 pp of the best,
+%   train–test gap 15–33 pp, domain-adversarial training is a net loss on strong backbones.
+% (2) Why EEGNeX: learnable FBCSP + multi-scale envelope; first or tied-first on all three cohorts, 58 k params.
+% (3) SNN promise (event-driven, sample-synchronous) and SNN fragility (threshold is scale-sensitive -> subject shift
+%   moves firing rates) -> label-free alignment as homeostasis; the interaction hypothesis.
+% Relation to prior work (mandatory): Zhang et al. 2025 (PLIF on raw samples + EA), NiSNN-A (54-subject LOSO +
+%   energy), HR-SNN, conversion methods (LENet/SRIF). What is new here: first per-subject-paired, statistically
+%   pre-registered comparison of an SNN against 18 strong ANNs on 87 subjects; quantified alignment x network-type
+%   interaction; energy accounting from measured firing rates with EEGNet as reference.
+\todo{Introduction — after the senior author decides the framing (≈0.8 column). The comments above summarise the
+plan-v2 argument only as background material; do not treat it as the adopted story.}
+
+\noindent\textbf{Contributions.} \todo{To be decided by the senior author (the plan v2 proposed three; see docs/PLAN\_spiking\_eegnex\_icassp2027.md §0.3).}
+
+% --------------------------------------------------------------------------
+\section{Method}
+\label{sec:method}
+
+\subsection{From EEGNeX to S-EEGNeX}
+\label{ssec:mapping}
+% Layer mapping (PLAN §2.1): conv1 BN LIF1 | conv2 BN | dw BN pool LIF2 drop | conv3 BN | conv4 BN pool LIF3 drop | fc.
+% Weight shapes identical to EEGNeX (58,770 params + a few tau). Readout = non-spiking leaky integrator (LI) of the
+% flattened spike-count map (binary readout is an ablation). Fig. 1 here.
+\begin{figure}[t]
+  \centering
+  \todo{Fig.~1: layer mapping EEGNeX $\rightarrow$ S-EEGNeX; D (T=4 direct) vs S (temporal-native 1000/250/63 steps).}
+  % \includegraphics[width=\linewidth]{figures/fig1_layer_mapping}
+  \caption{Layer-wise spiking of EEGNeX. Left: EEGNeX. Right: S-EEGNeX-S, where LIF$_1$ runs at the 250~Hz sample rate and later neuron layers at the pooled rates; LIF layers are placed after the (linear) average pooling so that all downstream layers receive binary input.}
+  \label{fig:mapping}
+\end{figure}
+\todo{Text for the mapping and the two encodings (D: direct, $T{=}4$; S: temporal-native). Say ``sample-synchronous; with `same' padding the look-ahead is $\le 128$~ms''. Do NOT write ``anytime/streaming''.}
+
+\subsection{Temporal-native encoding}
+\label{ssec:encoding}
+% LIF1 on the raw sample axis rectifies at threshold; conv2 smooths the non-negative spike train -> envelope estimate
+% -> LIF2. State as hypothesis (supported by the analog-front-end ablation), not as a theorem.
+\todo{LIF dynamics: $H[t]=V[t-1]+(X[t]-V[t-1])/\tau$, $S=\Theta(H-v_{th})$; ATan surrogate; hard reset in the encoder, soft reset in deeper layers.}
+
+\subsection{Heterogeneous learnable time constants (HetPLIF)}
+\label{ssec:hetplif}
+% Per-channel learnable tau, log-uniform init: encoder [1.5,4] steps, deeper [1.5,8] steps. Relation to EEGNeX's two
+% dilated convolutions (fixed time scales) -> a continuum of learnable time scales. H3: LIF <= PLIF <= HetPLIF.
+\todo{One paragraph.}
+
+\subsection{Label-free subject alignment}
+\label{ssec:alignment}
+% EA per session (He & Wu 2020; 10% shrinkage), then per-trial channel z-score (chosen on the SHU pilot by validation
+% macro-F1, D-021). AdaBN: BN statistics re-estimated on the held-out subject's unlabeled trials at evaluation time.
+% Both are transductive-unsupervised; the ANN references receive the same alignment arm.
+\todo{One paragraph; state transductive use explicitly.}
+
+\subsection{Energy accounting}
+\label{ssec:energy}
+% E_SNN = sum_analog MACs*4.6 pJ + sum_spike MACs*r*0.9 pJ (45 nm, Horowitz 2014; Dampfhoffer 2023), r = measured
+% firing rate per test subject. Reference = EEGNet ANN and S-EEGNet.
+\todo{Two sentences + the equation.}
+
+% --------------------------------------------------------------------------
+\section{Experiments}
+\label{sec:exp}
+
+\subsection{Data, protocol and statistics}
+\label{ssec:protocol}
+% Cohorts (docs/PRIOR_RESULTS.md §1): WBCIC-SHU 2C 51 subj / 58 ch; SHU 2022 25 subj / 32 ch; WBCIC-SHU 3C 11 subj LOSO.
+% All 250 Hz, 0–4 s. 5-fold subject k-fold 6:2:2 with split seeds 41/42 (2C, SHU); LOSO (3C). Recipe: Adam 1e-4,
+% batch 128, patience 25 on val macro-F1, single training seed. Same folds as the 18-entry ANN benchmark -> pairing.
+% Pre-registered family (2C, Holm, 5 tests): H0-NI (delta=1 pp), H1 primary (difference of differences), H2-NI (S vs D),
+% H3 (Page's L), B1 (S-EEGNeX vs S-EEGNet). SHU/3C replication; SHU primary metric balanced accuracy.
+\todo{Write (≈0.6 column).}
+
+\subsection{Main comparison against published ANN baselines (unaligned)}
+\label{ssec:main}
+% ------------------------------------------------------------------------------------------------
+% 2026-09-18 (senior's request via WeChat): table restricted to the models we actually compare against,
+% each with its publication year; format of the table unchanged. Rows are GENERATED, not typed:
+%   python scripts/build_comparison_table.py --out outputs/analysis/comparison_table_2026-09-18
+%   -> outputs/analysis/comparison_table_2026-09-18/tab_main_rows.tex   (paste between \midrule ... \bottomrule)
+% Sources: 2C/SHU = results_snapshot_2026-09-13/experiments/{wbci_shu/wbci_2c,shu/shu}_cross_subject_bench_v1/tables/per_model.csv
+%          3C     = results_snapshot_2026-09-13/experiments/wbci_shu/paper_baseline_3c_821_v1/tables/per_cell.csv (ddof=1)
+%          SNN    = outputs/analysis/snn_round/shu_pilot_lr1e4/{per_model,energy}.csv (SHU pilot, split 41 only)
+% When the main run finishes, re-run the script with --snn-2c/--snn-shu/--snn-3c pointing at the new
+% analyze_snn_round.py outputs and replace the rows; the dagger marks then disappear automatically.
+% Twelve in-house entries of the 18-entry benchmark (S4ERP*, DualCD*, ATCNet-S4*, ATCNet ablations) are
+% deliberately NOT in this table (report only; they may still enter the CD diagram, k = 19).
+% Senior (09-18): "到时候不对比这个 eegnex" — if the EEGNeX row is finally dropped, delete ONE line below;
+% kept for now because the spiking models are derived from it (see docs/reports/REPORT_comparison_table_2026-09-18.md §5.4).
+% Candidate 2025/2026 baselines requested by the senior (not run yet; choose, then add a row + run):
+%   Zhang et al. 2025 (Neural Networks 191:107741, lightweight PLIF SNN, code github.com/Zhr1110/SnnForMI) \cite{zhang2025snn_mi_ea}
+%   CBraMod (ICLR 2025, EEG foundation model; weights already in ../Benchmark/weights/CBraMod.pth) \cite{wang2025cbramod}
+%   MIRepNet (arXiv 2025, MI-specific foundation model, HUST; pretraining corpus does not include SHU/WBCIC-SHU) \cite{liu2025mirepnet}
+%   DSGNet (IEEE JBHI 2026; architecture preview only, training code unreleased) \cite{dsgnet2026}
+% ------------------------------------------------------------------------------------------------
+\begin{table}[t]
+  \centering
+  \caption{Cross-subject accuracy (\%, mean $\pm$ SD over subjects, best-validation checkpoint) of published ANN baselines and the proposed spiking models on the three cohorts. Unaligned block: all entries use per-trial z-scoring only and the identical recipe and subject folds. Params at 58 channels / 2 classes. Energy: 45~nm estimate (MAC 4.6~pJ, AC 0.9~pJ, measured firing rates), SHU 32-channel 4-s trial; ``--'' = not computed. $^\dagger$SHU pilot, split seed 41 only (each subject tested once); main run (seeds 41+42) in progress. $^\ddagger$3C from the LOSO paper-recipe run (patience 100); being re-run with the common recipe.}
+  \label{tab:main}
+  \small
+  \begin{tabular}{lccccc}
+    \toprule
+    Model (year) & 2C (51) & SHU (25) & 3C (11) & Params & $\mu$J/trial \\
+    \midrule
+    DeepConvNet~\cite{schirrmeister2017deep} (2017) & 82.8 $\pm$ 12.1 & 61.0 $\pm$ 10.3 & -- & 302.6k & -- \\
+    EEGNet~\cite{lawhern2018eegnet} (2018) & 82.5 $\pm$ 12.0 & 61.5 $\pm$ 10.7 & 66.4 $\pm$ 13.1$^\ddagger$ & 3.0k & 78 \\
+    FBCNet~\cite{mane2021fbcnet} (2021) & 70.0 $\pm$ 10.8 & 59.2 $\pm$ 6.7 & -- & 20.7k & -- \\
+    ATCNet~\cite{altaheri2023atcnet} (2023) & 83.3 $\pm$ 12.0 & 62.0 $\pm$ 11.2 & 68.4 $\pm$ 13.3$^\ddagger$ & 114.6k & -- \\
+    EEGNeX~\cite{chen2024eegnex} (2024) & 83.4 $\pm$ 11.5 & 65.5 $\pm$ 10.0 & 69.9 $\pm$ 13.6$^\ddagger$ & 58.8k & 2539 \\
+    EEG-Deformer~\cite{ding2025deformer} (2025) & 82.7 $\pm$ 11.9 & 61.4 $\pm$ 9.5 & 68.5 $\pm$ 14.8$^\ddagger$ & 1.61M & -- \\
+    \midrule
+    S-EEGNet (PLIF) & \todo{} & 60.6 $\pm$ 11.1$^\dagger$ & \todo{} & 3.0k & 79 \\
+    S-EEGNeX-D (HetPLIF, $T{=}4$) & \todo{} & 64.2 $\pm$ 10.1$^\dagger$ & \todo{} & 58.9k & 358 \\
+    \textbf{S-EEGNeX-S (HetPLIF, temporal-native)} & \todo{} & 63.3 $\pm$ 11.0$^\dagger$ & \todo{} & 58.9k & 148 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+\begin{figure}[t]
+  \centering
+  \todo{Fig.: critical-difference diagram, 2C, k=19 (18 ANN + S-EEGNeX-S), Bonferroni–Dunn vs S-EEGNeX.}
+  \caption{Critical-difference diagram on WBCIC-SHU 2C (Friedman + Nemenyi; $N{=}51$ subjects).}
+  \label{fig:cd}
+\end{figure}
+\todo{Non-inferiority statement with one-sided bootstrap lower bound of the paired difference vs $\delta = 1$~pp; Hodges–Lehmann shift, BCa CI, win/tie/loss, $n_{\mathrm{eff}}$.}
+
+\subsection{Alignment $\times$ network type}
+\label{ssec:interaction}
+\begin{table}[t]
+  \centering
+  \caption{Aligned block (2C): per-subject accuracy of three models under no alignment, EA, and EA+AdaBN ($3\times 3$). The pre-registered H1 is the difference-of-differences test on the $\{$EEGNeX, S-EEGNeX-S$\}\times\{$none, EA+AdaBN$\}$ subset. \todo{Fill from interaction\_H1.csv and per\_model.csv (run analyze\_snn\_round.py with --aligned-arm eaz).}}
+  \label{tab:align}
+  \small
+  \begin{tabular}{lccc}
+    \toprule
+    Model & none & EA & EA+AdaBN \\
+    \midrule
+    EEGNeX & \todo{} & \todo{} & \todo{} \\
+    EEGNet & \todo{} & \todo{} & \todo{} \\
+    S-EEGNeX-S & \todo{} & \todo{} & \todo{} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+\begin{figure}[t]
+  \centering
+  \todo{Fig.: per-subject alignment gain, ANN vs SNN (paired), with 95\% CI of the difference of differences.}
+  \caption{Alignment gain per subject for EEGNeX and S-EEGNeX-S on 2C.}
+  \label{fig:interaction}
+\end{figure}
+\todo{Report H1 as the primary test; if not significant, report as an observation (D-023).}
+
+\subsection{Firing rates, energy and ablations}
+\label{ssec:ablation}
+\begin{figure}[t]
+  \centering
+  \todo{Fig.: between-subject distribution of layer-wise firing rates before/after alignment (from spike\_stats).}
+  \caption{Per-layer mean firing rate across held-out subjects, with and without alignment.}
+  \label{fig:rates}
+\end{figure}
+\begin{table}[t]
+  \centering
+  \caption{Single-factor ablations of S-EEGNeX-S (SHU 2022 pilot, split 41, learning rate $10^{-3}$; paired $\Delta$ accuracy vs the $10^{-3}$ S-EEGNeX-S, Wilcoxon). Neuron (H3) and encoding (H2) rows come from the main run at $10^{-4}$. \todo{Fill from outputs/analysis/snn\_round/shu\_pilot\_lr1e3/paired\_tests.csv (afe/spk/noinit) and the main SHU analysis (H2/H3).}}
+  \label{tab:ablation}
+  \small
+  \begin{tabular}{lcc}
+    \toprule
+    Variant & $\Delta$ acc (pp) & $p$ \\
+    \midrule
+    Analog front-end (spikes after spatial filter) & \todo{$-1.82$} & \todo{0.027} \\
+    Binary readout instead of LI & \todo{$+0.50$} & \todo{n.s.} \\
+    Default BN init & \todo{$-0.30$} & \todo{n.s.} \\
+    LIF / PLIF instead of HetPLIF (H3) & \todo{} & \todo{} \\
+    Direct encoding, $T{=}4$ (H2) & \todo{} & \todo{} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+\todo{Energy: S-EEGNeX-S vs EEGNeX vs EEGNet (state EEGNeX accuracy at roughly EEGNet-scale energy; numbers from energy.csv; no multiplier in title/abstract).}
+
+% --------------------------------------------------------------------------
+\section{Conclusion}
+\label{sec:conclusion}
+\todo{One paragraph. Limitations: transductive alignment (unlabeled test-subject data), single training seed with shared initialisation, recipe dependence, SHU floor effect (chance band 51.4--53.7\%), temporal-native model $\sim$3$\times$ slower to train (launch-bound sequential loop).}
+
+% Balance the last page if needed: \vfill\pagebreak
+
+% --------------------------------------------------------------------------
+% 5th page: references only (plus funding / compliance statement if required).
+\bibliographystyle{IEEEbib}
+\bibliography{refs}
+
+\end{document}

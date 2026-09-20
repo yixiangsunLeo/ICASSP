@@ -1,0 +1,509 @@
+% ICASSP 2027 manuscript -- built on the team's accepted ICASSP 2026 paper (BM-TSE) and re-aligned with the
+% ICASSP 2027 author kit (Template.tex / spconf.sty / IEEEbib.bst downloaded from the CMS paper kit on 2026-09-18;
+% copies in paper/ and paper/official_kit/). To be used with:
+%          spconf.sty  - ICASSP/ICIP LaTeX style file (paper/spconf.sty), and
+%          IEEEbib.bst - IEEE bibliography style file (paper/IEEEbib.bst).
+% 2027 kit rules that matter (Template.tex body text, paper/official_kit/format.pdf + Author-PDF-Guide,
+% docs/ICASSP2027_SUBMISSION.md). Audited 2026-09-18 against the kit; items marked [done] are already applied here:
+%   * Length: up to 4 pages of technical content; the optional 5th page may contain only references, funding
+%     acknowledgements and a Compliance-with-Ethical-Standards statement (CMS paper-kit page; Template.tex says
+%     "references only"). Papers over 5 pages are rejected. The \clearpage before the bibliography puts the
+%     references on the last page; the AI disclosure stays in a \thanks{} on page 1.
+%   * Print area 178 x 229 mm (US Letter or A4): nothing may extend outside it -> no \enlargethispage [done: removed];
+%     the final log must show zero "Overfull \hbox".
+%   * Font >= 9 pt everywhere (body, captions, tables, footnotes): \ninept is the allowed minimum; \footnotesize
+%     (8 pt), \scriptsize and \tiny are not allowed [done: table venue lines use \small = 9 pt; \footnotesize is
+%     remapped to \small below so that \thanks footnotes are 9 pt too].
+%   * Title: plain text only (the style file passes it through \uppercase; the CMS forbids math in titles) and the
+%     title / author list on the PDF must match the CMS form exactly. Up to 5 index terms.
+%   * Abstract 100-150 words (the 2026 abstract below has 168 -> the new one must be shorter); identical to the CMS one.
+%   * Subheadings in sentence case ("Robust EEG encoder") [done]; major headings are uppercased by the style file.
+%   * A discussion of the relation to prior work must be present (own subsection or a marked Intro paragraph).
+%   * Floats: within the margins, preferably at the top of columns; figure*/table* allowed; captions >= 9 pt;
+%     colours readable in black and white.
+%   * PDF <= 5 MB; ALL fonts embedded and subset; no Type 3 fonts (Type 1 or embeddable TrueType only -- matplotlib
+%     figures: pdf.fonttype = 42); no page numbers (style file does it); file name = first author's surname.
+%     Do not use spconf's [preprint] / \copyrightnotice.
+%   * Single-blind: real names and affiliations on the PDF; \thanks and \sthanks must not be mixed in one \name.
+%     Every author needs an ORCID (entered in the CMS, not in the PDF). Human EEG data -> consider a
+%     Compliance-with-Ethical-Standards statement (allowed on page 5).
+%   * IEEE policy: disclose AI-assisted content in the acknowledgments -> inside a \thanks{} (see note at \name).
+% STATUS 2026-09-18: only the preamble, the result tables of Sec. 4.1, subsection capitalisation and the
+% bibliography line were changed; all other text is still the 2026 paper's and will be rewritten.
+% \tbd marks a placeholder result cell. The three cohort tables are GENERATED
+% (scripts/build_dataset_tables.py --splice old_reference.tex); do not edit their numbers by hand -- rerun the
+% script when new results land (see the comment block at the tables).
+% --------------------------------------------------------------------------
+\documentclass{article}
+\usepackage{spconf,amsmath,graphicx}     % the kit's package line, minus hyperref (loaded last, below)
+\usepackage{amsfonts}                     % \mathbb in Sec. 2 (amsmath alone does not provide it)
+\usepackage{booktabs,multirow}            % result tables in the 2026 paper's style (multicol / float were unused -> dropped)
+\usepackage{xcolor}                       % only for the \tbd placeholder
+\usepackage{hyperref}                     % kit package; loaded last as usual
+\renewcommand{\footnotesize}{\small}      % footnotes (\thanks) at 9 pt: the kit's minimum; article.cls would use 8 pt
+% Placeholder for results that do not exist yet. Before the final build replace the definition by
+%   \DeclareRobustCommand{\tbd}{\PackageError{paper}{TBD placeholder left in manuscript}{}}
+% so that no placeholder can survive, and drop \usepackage{xcolor} (nothing else uses it; PDF must be black ink).
+\DeclareRobustCommand{\tbd}{\textcolor{red}{TBD}}
+
+% Title.
+% ------
+\title{Brainprint-Modulated Target Speaker Extraction}
+%
+% Single address.
+% ---------------
+% ICASSP 2027 (single-blind): keep real names/affiliations; ORCIDs go into the CMS, not the PDF.
+% IEEE AI-disclosure: add a sentence to the acknowledgment \thanks{}, e.g.
+%   \thanks{Portions of the code and text were drafted with the assistance of an AI coding agent;
+%           all experiments, analyses and claims were verified by the authors.}
+\name{Qiushi Han$^{1, \dagger}$ \qquad Yuan Liao$^{2, \dagger}$ \qquad Youhao Si$^{1}$ \qquad Liya Huang$^{1, \star}$\thanks{This work was supported by the National Natural Science Foundation of China (Grant No.61977039)}\thanks{$\dagger$ These authors contributed equally to this work}\thanks{$\star$ Corresponding author: \texttt{huangly@njupt.edu.cn}}}
+
+\address{
+    $^{1}$College of Electronic and Optical Engineering \& College of Flexible Electronics (Future Technology), \\ Nanjing University of Posts and Telecommunications, Nanjing, China \\
+    $^{2}$School of Artificial Intelligence, School of Data Science, SRIBD, \\ The Chinese University of Hong Kong, Shenzhen, China
+    }
+%
+% For example:
+% ------------
+%\address{School\\
+%	Department\\
+%	Address}
+%
+% Two addresses (uncomment and modify for two-address case).
+% ----------------------------------------------------------
+%\twoauthors
+%  {A. Author-one, B. Author-two\sthanks{Thanks to XYZ agency for funding.}}
+%	{School A-B\\
+%	Department A-B\\
+%	Address A-B}
+%  {C. Author-three, D. Author-four\sthanks{The fourth author performed the work
+%	while at ...}}
+%	{School C-D\\
+%	Department C-D\\
+%	Address C-D}
+%
+\begin{document}
+\ninept   % 9 pt = the minimum font size allowed by the kit; the kit template ships it commented out (10 pt default)
+%
+\maketitle
+%
+\begin{abstract}
+Achieving robust and personalized performance in neuro-steered Target Speaker Extraction (TSE) remains a significant challenge for next-generation hearing aids. This is primarily due to two factors: the inherent non-stationarity of EEG signals across sessions, and the high inter-subject variability that limits the efficacy of generalized models. To address these issues, we propose Brainprint-Modulated Target Speaker Extraction (BM-TSE), a novel framework for personalized and high-fidelity extraction. BM-TSE first employs a spatio-temporal EEG encoder with an Adaptive Spectral Gain (ASG) module to extract stable features resilient to non-stationarity. The core of our framework is a personalized modulation mechanism, where a unified brainmap embedding is learned under the joint supervision of subject identification (SID) and auditory attention decoding (AAD) tasks. This learned brainmap, encoding both static user traits and dynamic attentional states, actively refines the audio separation process, dynamically tailoring the output to each user. Evaluations on the public KUL and Cocktail Party datasets demonstrate that BM-TSE achieves state-of-the-art performance, significantly outperforming existing methods. Our code is publicly accessible at: https://github.com/rosshan-orz/BM-TSE.
+\end{abstract}
+
+
+\begin{keywords}
+Speaker extraction, EEG signals, multimodal fusion, brainprint, cocktail party
+\end{keywords}
+%
+\section{Introduction}
+\label{sec:intro}
+
+The human brain exhibits a remarkable capacity for selective auditory attention, allowing individuals to focus on a single speaker in complex acoustic environments like a cocktail party\cite{o2015attentional}. Replicating this function is crucial for developing advanced hearing aids for those with hearing loss\cite{hjortkjaer2025real}. Neuro-steered Target Speaker Extraction (TSE) has emerged as a groundbreaking paradigm to address this, aiming to decode a listener's attentional focus from various neural recordings, ranging from electroencephalography (EEG) \cite{zhao2024ensemble,zhao2024binary,ni2024dbpnet} to stereoelectroencephalography (sEEG) \cite{zhanglistening}.
+
+Significant progress has been made with end-to-end TSE models. Early works like BISS estimated speech envelopes from EEG to guide extraction\cite{ceolini2020brain}, while later models such as U-BESD and BASEN introduced direct time-domain fusion using feature-wise modulation and cross-attention\cite{hosseini2022end,zhang2023basen}. More recent approaches like NeuroHeed(+)\cite{pan2024neuroheed+} and MSFNet\cite{fan2024msfnet} have further improved performance by incorporating attention backends and graph neural networks. However, these methods face a key limitation in their feature encoding. They often process either temporal or spatial characteristics of the EEG in isolation, while a robust fusion of spatio-temporal features is needed to more effectively capture the brain's dynamic response to auditory stimuli. Furthermore, the inherent non-stationarity of EEG signals remains a major challenge, limiting model reliability across different sessions.
+
+Beyond feature encoding, a more profound conceptual gap exists in current TSE models. It is well-established that EEG signals contain unique and stable person-specific patterns, giving rise to the field of brainprint recognition\cite{saha2020intra,yang2022person,wang2020brainprint}. However, most TSE frameworks are designed to learn a generalized mapping from EEG to speech. These models implicitly treat this rich, identity-specific neural information as statistical variance to be suppressed, rather than a valuable signal to be exploited.
+
+To address these challenges, we propose the Brainprint-Modulated Target Speaker Extraction (BM-TSE) framework, a novel architecture designed for robust, personalized, and high-fidelity speech extraction. The foundation of our model is a robust spatio-temporal EEG encoder featuring an Adaptive Spectral Gain (ASG) module. This module is specifically engineered to extract stable and discriminative features from non-stationary signals. Building upon this representation, we introduce a Personalized Brainprint Module that learns a unified brainmap embedding, which is supervised to jointly encode the user's static identity (via SID) and dynamic attentional state (via AAD). The central innovation of our framework is a brainprint modulation mechanism, where this learned brainmap is leveraged to actively refine the separated audio features, dynamically tailoring the output to the specific user.
+
+The main contributions of this work are summarized as follows:
+\begin{itemize}
+    \item We design a robust, ASG-enhanced spatio-temporal EEG encoder that explicitly addresses the challenge of signal non-stationarity to extract stable neural features.
+    \item We propose a unified brainmap representation, a novel embedding supervised to jointly encode a user's unique identity and their dynamic attentional state.
+    \item We conduct extensive experiments demonstrating that our proposed model achieves new state-of-the-art results on cocktail party and KUL dataset, significantly outperforming existing TSE methods.
+\end{itemize}
+
+\section{Methods}
+\label{sec:methods}
+
+\begin{figure*}[ht!]
+    \centering
+    \includegraphics[width=0.95\textwidth]{main.pdf}
+    \caption{Overview of the BM-TSE architecture. The architecture is an end-to-end system that integrates brain and audio signals. First, a Robust EEG Encoder processes raw EEG to extract a stable feature embedding. This embedding is then fed into a fusion layer alongside multi-speaker audio features, which are processed by a TasNet encoder. The combined features are separated by Sandglasset blocks. The Personalized Brainprint Module creates a brainmap embedding, which refines the separated audio features before the final waveform is rebuilt. The entire model is trained with a multi-task loss function, optimizing for Target Speaker Extraction (TSE), Subject Identification (SID), and Auditory Attention Decoding (AAD) to ensure the brainmap is a personalized and effective guide.}
+    \label{fig:architecture}
+\end{figure*}
+
+We propose the Brainprint-Modulated Target Speaker Extraction (BM-TSE) framework, an end-to-end architecture for hyper-personalized and high-fidelity speech extraction. As shown in Fig.~\ref{fig:architecture}, the model synergistically optimizes three tasks: target speaker extraction (TSE), subject identification (SID), and auditory attention decoding (AAD). The core idea of BM-TSE is to use a personalized brainmap embedding to directly guide and refine the audio separation process. The framework consists of a robust EEG encoder, a brainprint-guided speaker extractor, and is optimized through a multi-task loss function.
+
+\subsection{Robust EEG encoder}
+\label{ssec:eeg_encoder}
+
+To address the inherent non-stationarity of EEG signals, our encoder is designed to extract robust features suitable for cross-session applications. The encoder processes the input EEG signal $X \in \mathbb{R}^{B \times C \times T}$ by first capturing initial spatio-temporal features, then enhancing them with an Adaptive Spectral Gain (ASG) block, and finally fusing them to produce a unified representation. Here, $B, C, T$ denote the batch size, channel count, and number of time points, respectively.
+
+First, two parallel branches process the input. The Long-Short Temporal Convolution (LS-TConv) branch extracts temporal dynamics, yielding features $E_{\text{temp}} \in \mathbb{R}^{B \times D \times T'}$. Concurrently, the Spatial Convolution (SConv) branch extracts topographical features, producing $E_{\text{spat}} \in \mathbb{R}^{B \times C \times D'}$. Here, $D$ and $D'$ are feature dimensions and $T'$ is the downsampled temporal length.
+
+These initial features are then independently enhanced by the ASG block. For a given input $E_{\text{in}}$, the ASG block contains two sub-components. A log-power block, $L(E_{\text{in}})$, captures nonlinear energy patterns to amplify stable inter-individual differences.
+\begin{equation}
+    L(E_{\text{in}}) = \log(\text{Pool}(E_{\text{in}}^2 + \epsilon))
+\end{equation}
+An adaptive normalization block, $A(E_{\text{in}})$, stabilizes feature distributions using a learnable gating mechanism based on Group Normalization (GN).
+\begin{equation}
+    A(E_{\text{in}}) = E_{\text{in}} \odot \sigma(W_s \odot \text{GN}(E_{\text{in}}) + b_s)
+\end{equation}
+The outputs are concatenated to form the enhanced representation: $\text{ASG}(E_{\text{in}}) = \text{Concat}(A(E_{\text{in}}), L(E_{\text{in}}))$.
+
+Finally, a cross-domain fusion mechanism integrates the enhanced features. The two feature sets are treated as distinct tokens, enriched with separate learnable positional embeddings ($P_{\text{temp}}, P_{\text{spat}}$), and then concatenated along the sequence dimension. A self-attention layer processes this combined sequence to learn dependencies within and across the domains, producing the final robust EEG feature embedding $E$.
+\begin{gather}
+\begin{split}
+    E'_{\text{temp}} &= \text{ASG}(E_{\text{temp}}) + P_{\text{temp}} \\
+    E'_{\text{spat}} &= \text{ASG}(E_{\text{spat}}) + P_{\text{spat}}
+\end{split} \\
+    E = \text{SelfAttention}(\text{Concat}(E'_{\text{temp}}, E'_{\text{spat}}))
+\end{gather}
+This final embedding $E$ serves as the input for all subsequent downstream modules.
+
+\subsection{Brainprint-guided speaker extraction}
+\label{ssec:extraction}
+
+The final EEG embedding $E$ is used to guide the audio extraction process. The audio pipeline consists of an audio encoder, a separation network, a personalized modulation step, and a final rebuilder.
+
+\textbf{Audio Encoding and Separation.} The input mixed-speech waveform $x$ is first converted into a feature representation $\hat{X}_{\text{audio}}$ by a TasNet encoder~\cite{luo2019conv}. This audio feature is then concatenated with the aligned EEG feature $E$ and fed into a separation network composed of two Sandglasset blocks~\cite{lam2021sandglassetlightmultigranularityselfattentive}.Unlike leading models such as DPRNN\cite{luo2020dual} or DPTNet\cite{zhao2022dptnet}, which operate on a fixed feature granularity, Sandglasset introduces a multi-granularity, sandglass-shaped structure. This design enables the hierarchical modeling of different temporal contexts, such as phonemes and words, which is crucial for effective speech separation.  This network processes the multimodal features and outputs an intermediate separated feature representation, denoted as $A$.
+
+\textbf{Personalized Brainprint Modulation.} Concurrently, the EEG feature $E$ is processed by a lightweight Personalized Brainprint Module consisting of residual convolutional blocks to produce the brainmap embedding. The brainmap is supervised by the SID and AAD losses, forcing it to encode both user-specific traits and attention-related states. The core innovation of our framework is the personalized modulation step, where the brainmap refines the intermediate audio feature $A$:
+\begin{equation}
+    A_{\text{refined}} = (\mathcal{T}(E) + \mathcal{P}(\text{brainmap})) \odot A
+\end{equation}
+Here, $\mathcal{T}(\cdot)$ and $\mathcal{P}(\cdot)$ are projection layers that linearly upsample the features to a uniform temporal length. This step allows the brainmap to act as a personalized filter, refining the separation based on the user's unique neural patterns. The refined feature $A_{\text{refined}}$ is then fed to a rebuilder to reconstruct the final time-domain waveform.
+
+\subsection{Multi-task optimization}
+\label{ssec:loss}
+
+The entire BM-TSE model is trained end-to-end by minimizing a composite multi-task loss function $\mathcal{L}_{\text{total}}$. This loss integrates the objectives from the primary speech extraction task and the two auxiliary tasks that supervise the brainmap embedding. The total loss is defined as:
+\begin{equation}
+    \mathcal{L}_{\text{total}} = \mathcal{L}_{\text{TSE}} + \alpha \mathcal{L}_{\text{SID}} + \beta \mathcal{L}_{\text{AAD}}
+\end{equation}
+where $\alpha$ and $\beta$ are hyperparameters that balance the contribution of each task.
+
+\textbf{High-Fidelity TSE Loss ($\mathcal{L}_{\text{TSE}}$).} 
+To ensure the extracted waveform $\hat{s}$ has high perceptual quality compared to the ground truth $s$, we use a multi-component loss. $\mathcal{L}_{\text{TSE}}$ is a weighted sum of three metrics that target different aspects of audio fidelity:
+\begin{equation}
+    \mathcal{L}_{\text{TSE}} = w_1 \mathcal{L}_{\text{MSE}} + w_2 \mathcal{L}_{\text{STFT}} + w_3 \mathcal{L}_{\text{SI-SDR}}
+\end{equation}
+The components are the time-domain Mean Squared Error ($\mathcal{L}_{\text{MSE}}$), a frequency-domain STFT magnitude loss ($\mathcal{L}_{\text{STFT}}$), and the scale-invariant SI-SDR loss($\mathcal{L}_{\text{SI-SDR}}$).
+
+\textbf{Brainprint Supervision Losses ($\mathcal{L}_{\text{SID}}, \mathcal{L}_{\text{AAD}}$).}
+The brainmap embedding is supervised by two auxiliary classification losses. The Subject Identification Loss ($\mathcal{L}_{\text{SID}}$) trains the model to recognize the user's identity. The Auditory Attention Decoding Loss ($\mathcal{L}_{\text{AAD}}$) trains the model to identify the user's current attentional focus. Both tasks are optimized using the standard Cross-Entropy (CE) loss:
+\begin{equation}
+    \mathcal{L}_{\text{CE}} = - \sum_{c=1}^{C} y_c \log(p_c)
+\end{equation}
+where $y_c$ is the one-hot ground truth label for class $c$, and $p_c$ is the predicted probability.
+
+\section{Experiments}
+\label{sec:experiments}
+
+This section details the experimental setup, including the datasets used, evaluation metrics, and implementation specifics.
+
+\subsection{Datasets}
+
+Our evaluation was conducted on two public multi-speaker EEG-audio datasets: KUL and Cocktail Party.
+
+The \textbf{KUL} dataset \cite{biesmans2016auditory} recorded brain activity from 16 healthy participants as they listened to one of four Dutch short stories. During the experiment, participants were instructed to focus on a specific narrative from two streams presented simultaneously, one to their left and one to their right. The EEG data was captured using a 64-electrode setup at a high sampling rate of 8196 Hz.
+
+The \textbf{Cocktail Party} dataset \cite{broderick2018electrophysiological} included 33 participants who were all healthy and had normal hearing. This study also involved a cocktail party paradigm where two different stories were presented concurrently, with participants instructed to attend to the story in either their left or right ear. Each participant completed 30 trials, each lasting one minute.
+
+\subsection{Implementation details}
+\label{sec:implementation}
+
+Both datasets underwent a similar preprocessing pipeline. The data was band-pass filtered between 0.1 and 45 Hz to isolate relevant neural activity. For the KUL dataset, a notch filter was also used to remove power-line interference, and the data was downsampled to 128 Hz. In the Cocktail Party dataset, channels with excessive noise were corrected using spline interpolation. Re-referencing was performed on both datasets, with the KUL data re-referenced to the average of all channels and the Cocktail Party data to the mastoid channels. Finally, Independent Component Analysis (ICA) \cite{delorme2004eeglab} was applied to remove artifacts from eye movements and muscle activity, ensuring the integrity of the data.
+
+To ensure a fair assessment and evaluate our model's performance, we used a randomized split to partition the data, ensuring samples from both datasets were mixed and then allocated to training, validation, and testing sets. This approach prevents data leakage and provides a more robust evaluation. We used a 75:12.5:12.5 ratio: 75\% of the data was used for training, 12.5\% for validation (where we tracked metrics to save the best-performing model), and the remaining 12.5\% was used as a final, unseen test set.
+
+BM-TSE is implemented using PyTorch and trained on an NVIDIA 4090. We employ the Adam optimizer for model training with an initial learning rate of 1e-4. A `StepLR` scheduler is used to adjust the learning rate, decaying by a factor of 0.9 every epoch. Training is conducted for 100 epochs with a batch size of 8. Training checkpoints are saved periodically, and the model yielding the best SI-SDRi on the validation set is saved as the final model. For more details, refer to the GitHub repository.
+
+% We randomly split the data into three sets: \textbf{training} (75\%), \textbf{validation} (12.5\%), and \textbf{testing} (12.5\%). This prevents data leakage and provides a fair evaluation of the model's performance on unseen data. The validation set was used to select the best model, and the test set provided a final performance score.
+
+To assess our proposed method's effectiveness, we used four key metrics: SI-SDR (dB), PESQ \cite{rix2001perceptual}, STOI \cite{taal2010short}, and ESTOI \cite{jensen2016algorithm}.
+
+% SI-SDR evaluates how accurately the signal is reconstructed. PESQ measures the perceived improvement in speech quality. STOI assesses speech intelligibility by looking at time-frequency correlations. ESTOI is an improved version of STOI, specifically designed for evaluating intelligibility in noisy conditions. For all metrics, higher values indicate better performance.
+
+% \begin{table*}[ht!]
+%     \caption{The performance of BM-TSE compared against competitive baseline models on the Cocktail Party and the KUL dataset. The evaluation used SI-SDR (dB) to measure speech quality, and STOI, ESTOI, and PESQ to assess speech intelligibility.}
+%     \label{tab:baseline}
+%     \centering
+%     \begin{tabular}{lcccccccc}
+%         \toprule
+%         \multicolumn{1}{l}{\multirow{2}{*}{Model}} & \multicolumn{4}{c}{Cocktail Party Dataset} & \multicolumn{4}{c}{KUL Dataset} \\
+%         \cmidrule(lr){2-5} \cmidrule(lr){6-9}
+%          & SI-SDR (dB) & STOI & ESTOI & PESQ & SI-SDR (dB) & STOI & ESTOI & PESQ \\
+%         \midrule
+%         Mixture & 0.45 & 0.71 & 0.55 & 1.61 & 0.25 & 0.69 & 0.52 & 1.17 \\
+%         UBESD \cite{hosseini2022end} & 8.54 & 0.83 & -- & 1.97 & 6.10 & 0.73 & 0.75 & 1.09 \\
+%         BASEN \cite{zhang2023basen} & 11.56 & 0.86 & 0.72 & 2.21 & 11.51 & 0.82 & 0.76 & 1.76 \\
+%         MSFNet \cite{fan2024msfnet} & 12.89 & 0.88 & 0.77 & \textbf{2.51} & 14.59 & 0.83 & 0.76 & \textbf{2.12} \\
+%         \textbf{BM-TSE (Ours)} & \textbf{14.02} & \textbf{0.90} & \textbf{0.77} & 2.47 & \textbf{15.92} & \textbf{0.85} & \textbf{0.77} & 2.10 \\
+%         \bottomrule
+%     \end{tabular}
+% \end{table*}
+
+\section{Experimental Results}
+\label{sec:results}
+
+\subsection{Comparison with baselines}
+
+We validated the performance of the BM-TSE framework and compared it with several baseline methods. Tables~\ref{tab:comparison_2c}--\ref{tab:comparison_3c} present a comprehensive overview of the performance metrics of all models on the Cocktail Party and KUL.
+
+% ------------------------------------------------------------------------------------------------------------
+% RESULT TABLES (2026-09-18): one table per cohort -- WBCIC-SHU 2C (51 subj.), SHU 2022 (25 subj.), WBCIC-SHU 3C
+% (11 subj., LOSO). Layout copied from the 2026 paper (model + venue line, \multirow cells, best in bold).
+% Rows = baselines ticked by the senior (EEGNet, FBCNet, ATCNet, EEG-Deformer; DeepConvNet and EEGNeX left out --
+% the reviewers' strongest objection is the missing EEGNeX row: add it with `--include eegnex`), the five
+% baselines being run in the parallel session (LaBraM, EEGPT, TCFormer, MDGEEG, EEGMoE -> \tbd until their rows
+% exist; EEGMoE has no public code/weights, CBraMod appears automatically if it is run instead; P = fine-tuned
+% from a public checkpoint), and ONE row for the proposed model. Pre-registration (AGENTS.md §4.3): main model =
+% seegnex@s_hplif (S-EEGNeX-S), D version = documented fallback; the choice is NOT made on test metrics.
+% "--" = a ticked baseline that was never run on that cohort (FBCNet on 3C).
+% Every number comes from a CSV (provenance: outputs/analysis/dataset_tables_<date>/dataset_tables_long.csv):
+%   2C / SHU : results_snapshot_2026-09-13/experiments/{wbci_shu/wbci_2c,shu/shu}_cross_subject_bench_v1/tables/per_model.csv
+%   3C       : results_snapshot_2026-09-13/experiments/wbci_shu/paper_baseline_3c_821_v1/tables/per_cell.csv
+%              (LOSO, official derivatives, paper recipe patience 100; recipe-matched re-runs from --snn-3c replace them)
+%   SNN / new baselines: outputs/analysis/snn_round/<run>/per_model.csv (analyze_snn_round.py; the parallel
+%              session writes its cells into the same run directories, so they arrive through --snn-*)
+% Regenerate (login node, CPU):
+%   python scripts/build_dataset_tables.py --out outputs/analysis/dataset_tables_<date> --splice old_reference.tex \
+%       [--snn-2c <per_model.csv>] [--snn-shu <...>] [--snn-3c <...>] [--ours seegnex@s_hplif] [--include eegnex] \
+%       [--extra 2C=<csv> --alias mdgeeg=<key in that csv>] [--layout compact] [--final]
+% Columns: 2C/3C = Acc +- SD, F1, AUC; SHU = BAcc +- SD (primary: session class imbalance; equals Acc within a few
+% hundredths of a pp), F1, AUC. Cohen's kappa exists for 2C/SHU (--metrics-2c acc+sd,macro_f1,auc,kappa), not for 3C.
+% Page budget: the three two-line-row tables take ~0.8 page; `--layout compact` splices one table* (all cohorts,
+% single-line rows, ~0.3 page) instead -- see outputs/analysis/dataset_tables_<date>/tab_compact_all.tex.
+% ------------------------------------------------------------------------------------------------------------
+% >>> AUTO-GENERATED COHORT TABLES BEGIN (scripts/build_dataset_tables.py) -- do not edit by hand, regenerate
+% generated by scripts/build_dataset_tables.py -> outputs/analysis/dataset_tables_2026-09-18/ ; regenerate, do not edit numbers by hand
+% cohort 2C: values from the CSVs listed in dataset_tables_long.csv (same directory).
+\begin{table}[htb]
+  \caption{Unaligned block (per-trial z-scoring only; no EA/AdaBN): cross-subject classification on WBCIC-SHU 2C (51 subjects, 58 channels, left vs.\ right hand; chance 50\%). Five subject folds with the validation subjects carved from the training subjects (train/validation/test 6:2:2), two fold seeds (every subject tested twice); identical optimiser and early-stopping rule for all rows. Mean over subjects; $\pm$: SD across subjects of the per-subject score averaged over the two seeds. Acc.: accuracy (\%); F1: macro-F1 (\%); AUC in $[0,1]$. Best value per column in bold; P: initialised from the public pre-trained checkpoint and fine-tuned with the common recipe; \tbd{}: not available yet.}
+  \label{tab:comparison_2c}
+  \centering
+  \setlength{\tabcolsep}{3pt}
+  \begin{tabular}{lccc}
+    \toprule
+    Model & Acc. & F1 & AUC \\
+    \midrule
+    {EEGNet~\cite{lawhern2018eegnet}} & \multirow{2}{*}{82.53 $\pm$ 12.04} & \multirow{2}{*}{82.50} & \multirow{2}{*}{0.892} \\
+    \small J. Neural Eng. 2018 &&& \\
+    \midrule
+    {FBCNet~\cite{mane2021fbcnet}} & \multirow{2}{*}{69.96 $\pm$ 10.79} & \multirow{2}{*}{69.50} & \multirow{2}{*}{0.767} \\
+    \small arXiv 2021 &&& \\
+    \midrule
+    {ATCNet~\cite{altaheri2023atcnet}} & \multirow{2}{*}{\textbf{83.28 $\pm$ 12.00}} & \multirow{2}{*}{\textbf{83.23}} & \multirow{2}{*}{\textbf{0.899}} \\
+    \small IEEE TII 2023 &&& \\
+    \midrule
+    {LaBraM~\cite{jiang2024labram}$^{\mathrm{P}}$} & \multirow{2}{*}{\tbd} & \multirow{2}{*}{\tbd} & \multirow{2}{*}{\tbd} \\
+    \small ICLR 2024 &&& \\
+    \midrule
+    {EEGPT~\cite{wang2024eegpt}$^{\mathrm{P}}$} & \multirow{2}{*}{\tbd} & \multirow{2}{*}{\tbd} & \multirow{2}{*}{\tbd} \\
+    \small NeurIPS 2024 &&& \\
+    \midrule
+    {EEG-Deformer~\cite{ding2025deformer}} & \multirow{2}{*}{82.71 $\pm$ 11.94} & \multirow{2}{*}{82.64} & \multirow{2}{*}{0.895} \\
+    \small IEEE JBHI 2025 &&& \\
+    \midrule
+    {TCFormer~\cite{altaheri2025tcformer}} & \multirow{2}{*}{\tbd} & \multirow{2}{*}{\tbd} & \multirow{2}{*}{\tbd} \\
+    \small Sci. Rep. 2025 &&& \\
+    \midrule
+    {MDGEEG~\cite{song2025mdgeeg}} & \multirow{2}{*}{\tbd} & \multirow{2}{*}{\tbd} & \multirow{2}{*}{\tbd} \\
+    \small Neurocomputing 2025 &&& \\
+    \midrule
+    {EEGMoE~\cite{gao2026eegmoe}$^{\mathrm{P}}$} & \multirow{2}{*}{\tbd} & \multirow{2}{*}{\tbd} & \multirow{2}{*}{\tbd} \\
+    \small IEEE TNNLS 2026 &&& \\
+    \midrule
+    \textbf{S-EEGNeX} & \multirow{2}{*}{\tbd} & \multirow{2}{*}{\tbd} & \multirow{2}{*}{\tbd} \\
+    \textbf{(Ours)} &&& \\
+    \bottomrule
+  \end{tabular}
+  % (Ours) row: pre-registered main model = seegnex@s_hplif (S version); the D version is the
+  % documented fallback. Do not pick by test metrics. Candidates (regenerate with --ours <key>):
+  %   seegnex@s_hplif: S-EEGNeX-S (HetPLIF, temporal-native)
+  %   seegnex@hplif: S-EEGNeX-D (HetPLIF, $T{=}4$)
+  %   seegnet@plif: S-EEGNet (PLIF)
+  % Their current numbers: dataset_tables.md / dataset_tables_long.csv next to this fragment.
+\end{table}
+
+% generated by scripts/build_dataset_tables.py -> outputs/analysis/dataset_tables_2026-09-18/ ; regenerate, do not edit numbers by hand
+% cohort SHU: values from the CSVs listed in dataset_tables_long.csv (same directory).
+\begin{table}[htb]
+  \caption{Unaligned block (per-trial z-scoring only; no EA/AdaBN): cross-subject classification on SHU 2022 (25 subjects, 32 channels, left vs.\ right hand). Protocol as in Table~\ref{tab:comparison_2c}. Balanced accuracy is the primary metric because of session-level class imbalance (it differs from accuracy by at most 0.03~pp for the rows shown). BAcc.: balanced accuracy (\%); F1: macro-F1 (\%); AUC in $[0,1]$. Best value per column in bold; P: initialised from the public pre-trained checkpoint and fine-tuned with the common recipe; \tbd{}: not available yet.}
+  \label{tab:comparison_shu}
+  \centering
+  \setlength{\tabcolsep}{3pt}
+  \begin{tabular}{lccc}
+    \toprule
+    Model & BAcc. & F1 & AUC \\
+    \midrule
+    {EEGNet~\cite{lawhern2018eegnet}} & \multirow{2}{*}{61.53 $\pm$ 10.70} & \multirow{2}{*}{61.26} & \multirow{2}{*}{0.656} \\
+    \small J. Neural Eng. 2018 &&& \\
+    \midrule
+    {FBCNet~\cite{mane2021fbcnet}} & \multirow{2}{*}{59.27 $\pm$ 6.67} & \multirow{2}{*}{57.94} & \multirow{2}{*}{0.633} \\
+    \small arXiv 2021 &&& \\
+    \midrule
+    {ATCNet~\cite{altaheri2023atcnet}} & \multirow{2}{*}{\textbf{61.95 $\pm$ 11.25}} & \multirow{2}{*}{\textbf{61.67}} & \multirow{2}{*}{\textbf{0.663}} \\
+    \small IEEE TII 2023 &&& \\
+    \midrule
+    {LaBraM~\cite{jiang2024labram}$^{\mathrm{P}}$} & \multirow{2}{*}{\tbd} & \multirow{2}{*}{\tbd} & \multirow{2}{*}{\tbd} \\
+    \small ICLR 2024 &&& \\
+    \midrule
+    {EEGPT~\cite{wang2024eegpt}$^{\mathrm{P}}$} & \multirow{2}{*}{\tbd} & \multirow{2}{*}{\tbd} & \multirow{2}{*}{\tbd} \\
+    \small NeurIPS 2024 &&& \\
+    \midrule
+    {EEG-Deformer~\cite{ding2025deformer}} & \multirow{2}{*}{61.43 $\pm$ 9.54} & \multirow{2}{*}{60.81} & \multirow{2}{*}{0.661} \\
+    \small IEEE JBHI 2025 &&& \\
+    \midrule
+    {TCFormer~\cite{altaheri2025tcformer}} & \multirow{2}{*}{\tbd} & \multirow{2}{*}{\tbd} & \multirow{2}{*}{\tbd} \\
+    \small Sci. Rep. 2025 &&& \\
+    \midrule
+    {MDGEEG~\cite{song2025mdgeeg}} & \multirow{2}{*}{\tbd} & \multirow{2}{*}{\tbd} & \multirow{2}{*}{\tbd} \\
+    \small Neurocomputing 2025 &&& \\
+    \midrule
+    {EEGMoE~\cite{gao2026eegmoe}$^{\mathrm{P}}$} & \multirow{2}{*}{\tbd} & \multirow{2}{*}{\tbd} & \multirow{2}{*}{\tbd} \\
+    \small IEEE TNNLS 2026 &&& \\
+    \midrule
+    \textbf{S-EEGNeX} & \multirow{2}{*}{\tbd} & \multirow{2}{*}{\tbd} & \multirow{2}{*}{\tbd} \\
+    \textbf{(Ours)} &&& \\
+    \bottomrule
+  \end{tabular}
+  % (Ours) row: pre-registered main model = seegnex@s_hplif (S version); the D version is the
+  % documented fallback. Do not pick by test metrics. Candidates (regenerate with --ours <key>):
+  %   seegnex@s_hplif: S-EEGNeX-S (HetPLIF, temporal-native)
+  %   seegnex@hplif: S-EEGNeX-D (HetPLIF, $T{=}4$)
+  %   seegnet@plif: S-EEGNet (PLIF)
+  % Their current numbers: dataset_tables.md / dataset_tables_long.csv next to this fragment.
+\end{table}
+
+% generated by scripts/build_dataset_tables.py -> outputs/analysis/dataset_tables_2026-09-18/ ; regenerate, do not edit numbers by hand
+% cohort 3C: values from the CSVs listed in dataset_tables_long.csv (same directory).
+\begin{table}[htb]
+  \caption{Unaligned block (per-trial z-scoring only; no EA/AdaBN): cross-subject classification on WBCIC-SHU 3C (11 subjects, 58 channels; left hand / right hand / feet; chance 33.3\%). Leave-one-subject-out on the dataset's official pre-processed derivatives, with the same per-trial z-scoring, optimiser and early-stopping rule as Table~\ref{tab:comparison_2c}. AUC: macro one-vs-rest. Mean over the held-out subjects; $\pm$: SD across subjects. Acc.: accuracy (\%); F1: macro-F1 (\%); AUC in $[0,1]$. Best value per column in bold; all rows: historical LOSO run with patience 100 instead of 25 (not recipe-matched); P: initialised from the public pre-trained checkpoint and fine-tuned with the common recipe; \tbd{}: not available yet; --: not run.}
+  \label{tab:comparison_3c}
+  \centering
+  \setlength{\tabcolsep}{3pt}
+  \begin{tabular}{lccc}
+    \toprule
+    Model & Acc. & F1 & AUC \\
+    \midrule
+    {EEGNet~\cite{lawhern2018eegnet}} & \multirow{2}{*}{66.36 $\pm$ 13.05} & \multirow{2}{*}{66.06} & \multirow{2}{*}{0.825} \\
+    \small J. Neural Eng. 2018 &&& \\
+    \midrule
+    {FBCNet~\cite{mane2021fbcnet}} & \multirow{2}{*}{--} & \multirow{2}{*}{--} & \multirow{2}{*}{--} \\
+    \small arXiv 2021 &&& \\
+    \midrule
+    {ATCNet~\cite{altaheri2023atcnet}} & \multirow{2}{*}{68.39 $\pm$ 13.26} & \multirow{2}{*}{67.55} & \multirow{2}{*}{\textbf{0.855}} \\
+    \small IEEE TII 2023 &&& \\
+    \midrule
+    {LaBraM~\cite{jiang2024labram}$^{\mathrm{P}}$} & \multirow{2}{*}{\tbd} & \multirow{2}{*}{\tbd} & \multirow{2}{*}{\tbd} \\
+    \small ICLR 2024 &&& \\
+    \midrule
+    {EEGPT~\cite{wang2024eegpt}$^{\mathrm{P}}$} & \multirow{2}{*}{\tbd} & \multirow{2}{*}{\tbd} & \multirow{2}{*}{\tbd} \\
+    \small NeurIPS 2024 &&& \\
+    \midrule
+    {EEG-Deformer~\cite{ding2025deformer}} & \multirow{2}{*}{\textbf{68.49 $\pm$ 14.83}} & \multirow{2}{*}{\textbf{68.25}} & \multirow{2}{*}{0.848} \\
+    \small IEEE JBHI 2025 &&& \\
+    \midrule
+    {TCFormer~\cite{altaheri2025tcformer}} & \multirow{2}{*}{\tbd} & \multirow{2}{*}{\tbd} & \multirow{2}{*}{\tbd} \\
+    \small Sci. Rep. 2025 &&& \\
+    \midrule
+    {MDGEEG~\cite{song2025mdgeeg}} & \multirow{2}{*}{\tbd} & \multirow{2}{*}{\tbd} & \multirow{2}{*}{\tbd} \\
+    \small Neurocomputing 2025 &&& \\
+    \midrule
+    {EEGMoE~\cite{gao2026eegmoe}$^{\mathrm{P}}$} & \multirow{2}{*}{\tbd} & \multirow{2}{*}{\tbd} & \multirow{2}{*}{\tbd} \\
+    \small IEEE TNNLS 2026 &&& \\
+    \midrule
+    \textbf{S-EEGNeX} & \multirow{2}{*}{\tbd} & \multirow{2}{*}{\tbd} & \multirow{2}{*}{\tbd} \\
+    \textbf{(Ours)} &&& \\
+    \bottomrule
+  \end{tabular}
+  % (Ours) row: pre-registered main model = seegnex@s_hplif (S version); the D version is the
+  % documented fallback. Do not pick by test metrics. Candidates (regenerate with --ours <key>):
+  %   seegnex@s_hplif: S-EEGNeX-S (HetPLIF, temporal-native)
+  %   seegnex@hplif: S-EEGNeX-D (HetPLIF, $T{=}4$)
+  %   seegnet@plif: S-EEGNet (PLIF)
+  % Their current numbers: dataset_tables.md / dataset_tables_long.csv next to this fragment.
+\end{table}
+% <<< AUTO-GENERATED COHORT TABLES END
+
+As shown in the Tables, the proposed BM-TSE model consistently outperforms all other baseline models on both datasets in terms of speech quality (measured by SI-SDR) and speech intelligibility (measured by STOI and ESTOI). Specifically, BM-TSE achieves the highest SI-SDR, STOI, and ESTOI scores, with SI-SDR values of 14.02 dB on the Cocktail Party dataset and 15.92 dB on the KUL dataset. While the MSFNet model shows slightly higher PESQ scores, the overall results demonstrate the superior performance of BM-TSE in improving both speech quality and intelligibility.
+
+% \begin{table*}[htb!]
+%     \caption{The performance of BM-TSE compared against competitive baseline models on the Cocktail Party and the KUL dataset. The evaluation used SI-SDR (dB) to measure speech quality, and STOI, ESTOI, and PESQ to assess speech intelligibility.}
+%     \label{tab:baseline}
+%     \centering
+%     \begin{tabular}{lcccccccc}
+%         \toprule
+%         \multicolumn{1}{l}{\multirow{2}{*}{Model}} & \multicolumn{4}{c}{Cocktail Party Dataset} & \multicolumn{4}{c}{KUL Dataset} \\
+%         \cmidrule(lr){2-5} \cmidrule(lr){6-9}
+%          & SI-SDR (dB) & STOI & ESTOI & PESQ & SI-SDR (dB) & STOI & ESTOI & PESQ \\
+%         \midrule
+%         Mixture & 0.45 & 0.71 & 0.55 & 1.61 & 0.25 & 0.69 & 0.52 & 1.17 \\
+%         UBESD \cite{hosseini2022end} & 8.54 & 0.83 & -- & 1.97 & 6.10 & 0.73 & 0.75 & 1.09 \\
+%         BASEN \cite{zhang2023basen} & 11.56 & 0.86 & 0.72 & 2.21 & 11.51 & 0.82 & 0.76 & 1.76 \\
+%         MSFNet \cite{fan2024msfnet} & 12.89 & 0.88 & 0.77 & \textbf{2.51} & 14.59 & 0.83 & 0.76 & \textbf{2.12} \\
+%         \textbf{BM-TSE (Ours)} & \textbf{14.02} & \textbf{0.90} & \textbf{0.77} & 2.47 & \textbf{15.92} & \textbf{0.85} & \textbf{0.77} & 2.10 \\
+%         \bottomrule
+%     \end{tabular}
+% \end{table*}
+
+\subsection{Ablation study}
+
+The ablation study in Table \ref{tab:ablation} provides a clear analysis of our proposed BM-TSE model. The complete model achieves top performance, setting a strong benchmark. The results reveal that the LS-TConv module is indispensable, as its removal causes a dramatic performance collapse, with SI-SDRi, a score measuring how much a separation algorithm improves the separation of a target signal compared to the original mixture, falling from 14.50 dB to just 2.88 dB. While less severe, the absence of the ASG and SConv modules also leads to a notable performance decline, underscoring their importance. Additionally, the auxiliary loss function, $\mathcal{L}_{SID}$, proves to be a crucial element, as its removal results in a clear performance degradation.
+
+\begin{table}[htb!]
+  \caption{Ablation Study Analysis of Key Modules in the BM-TSE.}
+  \label{tab:ablation}
+  \centering
+  \begin{tabular}{lcccc}
+    \toprule
+    Model              & SI-SDRi (dB) & STOI    & ESTOI   & PESQ    \\
+    \midrule
+    BM-TSE    &   \multirow{2}{*}{14.50}  &   \multirow{2}{*}{0.90}  &   \multirow{2}{*}{0.77}  &   \multirow{2}{*}{2.47}  \\
+    (Full)&&&& \\
+    \midrule
+    BM-TSE  &    \multirow{2}{*}{2.88}    &   \multirow{2}{*}{0.72}    &   \multirow{2}{*}{0.54}    &   \multirow{2}{*}{1.70}  \\
+    (w/o LS-TConv) &&&& \\
+    \midrule
+    BM-TSE  &   \multirow{2}{*}{13.61}   &   \multirow{2}{*}{0.88}    &   \multirow{2}{*}{0.74}    &   \multirow{2}{*}{2.37}  \\
+    (w/o SConv) &&&& \\
+    \midrule
+        BM-TSE &   \multirow{2}{*}{13.13}  &   \multirow{2}{*}{0.88}  &   \multirow{2}{*}{0.74}  &   \multirow{2}{*}{2.39}  \\
+        (w/o ASG)&&&& \\
+    \midrule
+    BM-TSE & \multirow{2}{*}{12.29}   &   \multirow{2}{*}{0.87}    &   \multirow{2}{*}{0.72}    &   \multirow{2}{*}{2.26}  \\
+    (w/o $\mathcal{L}_{SID}$)&&&& \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+
+\subsection{Visualization}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.95\linewidth]{visual.pdf}
+    \caption{Mel-spectrograms of audio generated from different ablation studies, illustrating the impact of various model components on audio quality.(a) Clean audio, (b) BM-TSE (Full), (c) BM-TSE (w/o ASG), (d) BM-TSE (w/o $\mathcal{L}_{SID}$), (e) BM-TSE (w/o SConv), (f) BM-TSE (w/o LS-TConv)}
+    \label{fig:mel}
+\end{figure}
+
+As shown in Fig.\ref{fig:mel}, the provided Mel-spectrograms effectively illustrate the impact of an ablation study on the BM-TSE model's audio generation quality. The clean audio in Figure (a) serves as the baseline, showing rich, well-defined spectral details. Our high-fidelity benchmark is the complete BM-TSE model, shown in Figure (b), which demonstrates the full model's effectiveness. The ablation results highlight the critical role of each component. Removing Audio Semantic Guidance (ASG) in Figure (c) leads to a loss of high-frequency detail. Excluding the Speaker Identity Loss ($\mathcal{L}_{SID}$) in Figure (d) introduces noticeable spectral distortion. The absence of Spectral Convolution (SConv) in Figure (e) causes disruptive, blotchy artifacts, while a lack of Long-Short Term Temporal Convolution (LS-TConv) in Figure (f) blurs the temporal dynamics, significantly degrading the audio's coherence. These comparisons demonstrate that each component of the model is essential for generating high-quality, coherent, and artifact-free audio. For detailed data and additional figures, please refer to the Git repository
+\section{Conclusion}
+\label{sec:conclusion}
+
+In this paper, we introduced BM-TSE, a novel framework designed for personalized and high-fidelity neuro-steered target speaker extraction. BM-TSE integrates a robust ASG-enhanced spatio-temporal encoder to address signal non-stationarity. More centrally, it features a brainprint modulation mechanism where a unified brainmap embedding, jointly supervised by subject identification and attention decoding, actively refines the speech separation process. Extensive experiments on the KUL and Cocktail Party datasets demonstrate that BM-TSE achieves state-of-the-art performance, significantly outperforming existing methods. Our findings validate that leveraging a user's unique neural signature not merely for classification but as a dynamic, modulatory signal within the core audio processing pipeline is a powerful and effective strategy. This approach paves the way for a new generation of truly personalized, neuro-steered assistive technologies.
+
+% References start on a new page (the optional 5th page may hold only references / funding acknowledgements /
+% ethics statement). \vfill\pagebreak is for balancing the two columns of the LAST TEXT page and belongs at the
+% balance point inside that page's text, not directly before \clearpage.
+\clearpage
+
+%\section{REFERENCES}
+%\label{sec:refs}
+
+% References should be produced using the bibtex program from suitable
+% BiBTeX files (here: strings, refs, manuals). The IEEEbib.bst bibliography
+% style file from IEEE produces unsorted bibliography list.
+% -------------------------------------------------------------------------
+\bibliographystyle{IEEEbib}
+% refs.bib = paper/refs.bib (citations of the table baselines, datasets and SNN literature; entries marked VERIFY
+% still need a check). The 2026 paper's own bibliography (strings.bib) is not in this repository; while its \cite
+% keys remain in the old text, compile with \bibliography{strings,refs} in a folder that also holds strings.bib
+% (a missing .bib makes BibTeX skip the whole \bibdata command, so do not list a file that is not there).
+\bibliography{refs}
+
+\end{document}

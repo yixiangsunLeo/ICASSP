@@ -89,6 +89,10 @@ class E2ESpec:
     # Per-epoch monitoring curves (never used for model selection; see module docstring).
     curves: bool = False                # log per-epoch train/test metrics alongside val
     train_eval_max_trials: int = 2000   # cap of the train-accuracy monitoring subset
+    # Evaluation-time only (config key `eval.adabn`): additionally score each held-out
+    # subject after re-estimating BatchNorm statistics on that subject's own *unlabeled*
+    # trials (AdaBN, Li et al. 2018). Never touches training, best.pt or the cell signature.
+    adabn: bool = False
 
     @property
     def accum_steps(self) -> int:

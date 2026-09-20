@@ -38,7 +38,6 @@ extend-exclude = [
     # Vendored upstream sources are reference material, kept byte-for-byte.
     "code/models/atcnet/_official_keras",
     "code/models/paper_baselines/_official",
-    "backup",
 ]
 
 [tool.ruff.lint]

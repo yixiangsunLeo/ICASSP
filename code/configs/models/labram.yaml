@@ -1,0 +1,50 @@
+# LaBraM-base (Jiang, Zhao & Lu, ICLR 2024) — official fine-tuning model, full fine-tuning.
+# Source: https://github.com/935963004/LaBraM @ c431221e6cfd23dbfa9950e0180682fb322b0548
+#   (modeling_finetune.py vendored verbatim under code/models/external/labram/_official/).
+# Wrapper: code/models/external/labram/adapter.py, built and loaded the way the EEG-FM-Compass
+#   benchmark (Liu et al., NSR 2026; models/FM/LaBraM/Loader_LaBraM.py) fine-tunes LaBraM.
+#   Provenance and every deviation: code/models/external/labram/PROVENANCE.md.
+#
+# `defaults` are the EEG-FM-Compass construction kwargs (= upstream run_class_finetuning.py
+# argparse defaults + `--abs_pos_emb`). Do not tune them: protocol P3/P6 fixes one recipe and
+# the paper/official structure for every external baseline.
+#
+# Input inside forward: [B, C, 1000] @ 250 Hz -> sinc resample to 200 Hz (800 samples) ->
+# standard_1020 channel ids -> [B, C, 4, 200]. No amplitude scaling, no filtering (P4).
+# Data dims (n_channels / n_times / n_classes / sfreq) are injected by the experiment layer.
+name: "labram"
+
+defaults:
+  arch: "labram_base_patch200_200"      # embed 200, depth 12, heads 10, mlp x4, patch 200
+
+  # backbone construction (Loader_LaBraM create_model kwargs)
+  drop_rate: 0.0
+  drop_path_rate: 0.1
+  attn_drop_rate: 0.0
+  init_values: 0.1                       # layer-scale init (--layer_scale_init_value)
+  init_scale: 0.001                      # upstream head init scale (head is replaced anyway)
+  qkv_bias: true                         # upstream fine-tune default; the pretraining checkpoint has
+                                         # no q/v bias -> these 24 x 200 params start at zero
+  use_abs_pos_emb: true                  # pretrained pos_embed rows selected by input_chans
+  use_rel_pos_bias: true                 # no-op in modeling_finetune (blocks built with window_size=None)
+  use_mean_pooling: true                 # fresh fc_norm LayerNorm over tokens (upstream default)
+
+  # readout + head: EEG-FM-Compass LinearLayers(feature_dim, n_classes, flatten=1, dropout_rate=0.1)
+  readout: "flatten"                     # feature_dim = (1 + C_kept * 4) * 200 = C_kept*800 + 200
+  head_dropout: 0.1
+
+  # input format conversion
+  native_sfreq: 200.0
+  segment_len: 200                       # 1 s patches at 200 Hz
+
+  # official pretraining checkpoint (weights/labram-base.pth via resolve_weights_path)
+  pretrained: true
+  weights_file: "labram-base.pth"
+  weights_sha256: "7c50583826afac76c4ab18f43d958df40496c8229accc09ed6a227c9bb57c37c"
+
+# The electrode list to look up in LaBraM's standard_1020 vocabulary, keyed by data.name.
+# All 58 WBCIC-SHU names and all 32 SHU names are in the vocabulary (asserted in tests).
+per_dataset:
+  wbci_shu_2c: {channel_set: wbci_shu}
+  wbci_shu_3c: {channel_set: wbci_shu}
+  shu: {channel_set: shu}

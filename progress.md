@@ -1,9 +1,365 @@
+---
+title: "progress.md — 逐日流水（最新在上）"
+tags:
+  - "#modality/eeg"
+  - "#pipeline/5_dl_model"
+created: "2026-06-10"
+updated: "2026-09-20 20:30"
+status: "active"
+---
+
 # PROGRESS / Memory Log
 
 The project's running memory. **Append a dated entry whenever you finish a
 meaningful step or make a design decision.** Newest entries on top. Keep it factual.
 
 Format per entry: date, what was done, decisions made, open questions, next step.
+
+---
+
+## 2026-09-20 20:30 — 可迁移仓库 + 3090 交接（D-041）
+
+用户要在 3090 账号训练，且那边读不到 `/share/workspace2`。已写给那边 AI 执行的 `HANDOFF.md` + `docs/handoff/`（安装、数据前缀改写、预检、同路径训练、`result.json` 回传）。新增 `scripts/repath_manifests.py`、`scripts/handoff_preflight.sh`、`scripts/sync_results_git.sh`。`.gitignore` 放行小结果文件，不放 npz/pt/`paths.local.yaml`。未改 `code/` 训练闭包、未改 `scripts/slurm/`、未改 yuan 的 `paths.local.yaml`、未 scancel。下一步：把可迁移树推进 `https://github.com/yixiangsunLeo/ICASSP`；用户在 4090 上按 HANDOFF Phase 3 rsync 数据。
+
+---
+
+## 2026-09-20 18:10 — 进度核对：yuan 收尾 3 卡 / AdaHGNN 未上卡 / Linzh seed-43 12/90
+
+yuan 正在跑：71034 SHU `s_plif` 最后 1 cell（split42 fold4 ep15，估 19:30）；71213 2C tcformer 7/10（split42 fold2 ep40，估 20:15–20:45）；71222 3C eegpt 9/11（fold9 ep7 + fold10 未开，估 19:20–19:40）。AdaHGNN-MI 71825–71830 **仍全 PD，无 Slurm 日志**。Linzh 4 卡在跑 2C split43，12 个 `result.json`；SHU 0；其余 8 个首链卡在 QOS 4 卡上限。估 Linzh 09-21 下午出齐。STATUS §0/§1/§1b/§1c/§1d 已改。
+
+---
+
+## 2026-09-20 18:25 — AdaHGNN-MI 实现、单测、提交三队列（D-040）
+
+用户 17:38 拍板方案 §8：接受 T2；原版不跑；mixup 1 臂、DANN 不开；「全都跑」；命名 AdaHGNN-MI；F=32；改完直接提交训练。
+实现 `code/models/external/adahgnn/mi_model.py`（≈0.1 M 参数：共享滤波器组 125/63 → 可微 top-k 超图 → 信号域 Laplacian 空间滤波 (I−γA₁)S → GELU/AvgPool16/Dropout/softmax 时间权重/每节点仿射 → 三尺度 HGNNP（58→13→4 / 32→14→4 解剖分半球）→ [mean; flatten; flatten] → 128 → 类别；同类别 Dirichlet mixup 臂走 `training_step` hook）；`adapter.py` 按 `arch` 分派（官方类保留不跑）；`adahgnn.yaml` 加 `per_dataset.channel_set` + `variants.{mi, mi_mix}`；`make_adahgnn_configs.py` roster 改两条目并重生成三份 `bl_*_adahgnn_zs_lr1e4.yaml`（协议逐键同 `snn_*`）；`baselines_plan_adahgnn.txt` 每队列一卡两进程。
+验证：`tests/models/test_adahgnn.py` 21 项通过（官方文件 sha256 = 实验室文件；三队列前向/反向且**所有参数都有梯度**；结构嵌入有梯度、行和为 1、≤k；稠密聚合与 `dhg.Hypergraph.v2v(mean)` 误差 < 1e-5；解剖映射是划分且 C3/C4、FC1/FC2、CP1/CP2 不同区且分属 SM_L/SM_R；单样本训练 batch 不崩；mixup 同类别、非自身、重 z-score；3 步 Adam 无 NaN；describe JSON；配置协议一致；plan 一致）；`test_external_integration` 配置子集 9 项、`test_fusion_and_specs` 53 项通过；三队列 npz `channel_names` 与 montage yaml 顺序一致。
+提交：71825–71830（NICE=50，SMOKE_FIRST，N_LINKS=2；3C 首链 71829 改 gpu3node）。全集群 40/40 卡满载，排队中。未 scancel 71034 / 71213 / 71222。62 cell 出齐前不当结果。
+
+---
+
+## 2026-09-20 17:40 — AdaHGNN：撤回改写、作业全取消、改为出适配方案待审（D-038 / D-039）
+
+16:55 用户指出第一版把网络改写了（分组 stem + 自制稠密超图 + 去 GRL + 时移改 250 Hz）。执行：`scancel` 71803–71808（全 PD、Elapsed 0:00，从未训练）；删 `network.py`；`adapter.py` 改为原样包装 `_official/models.py::EEG_AdaMSHyper`（sha256 与实验室文件一致）；`mi_torch_cu118` 装 `dhg==0.9.7`；`adahgnn.yaml` 只留 `d_model/patch_size/k`；测试改为校验官方类与 sha256；PROVENANCE / README / AGENTS §6 / D-037 措辞更正。
+17:09 用户改指令：**要做适配、先出方案审阅、不跑、原任务取消**。未再提交任何作业（`squeue` 只有 71034/71035、71213、71222/71223）。
+17:40 方案落盘 `docs/reports/PROPOSAL_adahgnn_mi_adaptation_2026-09-20.md`：原模型 9 条审计（[代码推导]：58 通道 batch 128 激活 ≈ 37 GB 必 OOM；超图结构经阈值/nonzero 不可微、嵌入无梯度、初始 softmax 饱和 → 每电极恰 1 条超边 = 随机固定分组；连续下标池化把 C3/C4、C1/C2、CP3/CP4 等 16 对左右同名电极平均；核 63/31 与时移按 128 Hz 硬编码；每通道独立 stem 715 k 参数；空间滤波在非线性之后无法表达 CSP/Laplacian；均值读出置换不变；原训练法按测试被试选 checkpoint、mixup 跨类别混合；dhg 逐 batch 循环）+ 四层方案 T0/T1/T2/T3 + 推荐配置 AdaHGNN-MI（≈ 0.1 M 参数、≈ 7 GB 激活）+ 只用验证集的 V0–V4 阶梯选择 + §8 六个待拍板问题。记 D-039；STATUS §0/§1d/§3 已改。一个准备验证上述推导的 CPU 小脚本被审查阻止、未运行（结论全部来自代码推导，实现时用单测确认）。
+
+---
+
+## 2026-09-20 16:50 — AdaHGNN 导出并在 yuan 提交三队列（D-037；**已被 17:40 条目取消**）
+
+学长指向 `/share/home/yuan/LY/DeepHypergraph`。最新完整版 = `project_V4` 的 `EEG_AdaMSHyper`（同日 V3 21:46 脚本是同一网络的 DANN 单文件）。已 vendoring + 懒加载条目 `adahgnn`；不移植 DANN；zs 配方；新 yaml `bl_*_adahgnn_zs_lr1e4.yaml`（未改 live `snn_*.yaml` / `bl_*_zs_lr1e4.yaml`）。`pytest tests/models/test_adahgnn.py` 18 passed。提交 71803–71808（NICE=50，每队列一卡，SMOKE_FIRST）；2C 首链 71803 改到 gpu3node。未 scancel 71034/71213/71222。31 cell 出齐前不当结果。
+
+---
+
+## 2026-09-20 15:05 — 对比模型 split 43：只 2C+SHU，Linzh 跑（D-036）
+
+学长要对比模型加划分 seed 43。用户指定在 Linzh 号跑、yuan 已在跑的不要重复、SNN 先不改。随后更正：**3C 是 LOSO，不加 43**。
+
+已做：cell 标签在单 seed≠0 时仍带 `split43`（不改 seed-0 的 3C 命名）；新配置 `bl_{wbci2c,shu}_zs_s43.yaml` + `baselines_plan_s43.txt`（12 作业，90 cell）；未改 live `snn_*.yaml` / `bl_*_zs_lr1e4.yaml`。代码同步到 `/share/workspace3/icassp_linzh_share/`，交接 `HANDOFF_FOR_LINZH.md`。MDGEEG / EEGMoE 仍跳过。未在 yuan 提交、未 scancel 71034/71213/71222。合并等用户再要求。
+
+---
+
+## 2026-09-20 13:10 — 三队列对照表（未完成格子为 —）
+
+用户要看三个数据集各自所需模型的表。跑 `analyze_snn_round.py`（只 `--run zs=`，`--allow-empty-family`）到 `outputs/analysis/snn_round/{wbci2c,shu,wbci3c}_zs_2026-09-20_1300/`，再把覆盖不齐的行（2C tcformer 3/10、3C eegpt 3/11、SHU s_plif 3/10）从 `--snn-*` 里去掉后跑 `build_dataset_tables.py --include eegnex --ours seegnex@s_hplif`。报告 `docs/reports/REPORT_cohort_tables_2026-09-20.md`：TBD/未齐写成 —，并列 S/D/S-EEGNet。未按测试集改主模型。未 splice `old_reference.tex`。
+
+---
+
+## 2026-09-20 13:00 — Linzh 60 基线 cell 合并进 yuan 正式目录；12 个挂起作业已 scancel
+
+用户确认合并并取消挂起任务。`cp -n` 写入 `outputs/experiments/{wbci_shu,shu}/snn_*_zs_lr1e4_v1/cells/`：2C 30 + SHU 30，无覆盖。核对 `result.json` 可读；Linzh 侧 6 个 `failures__*` 均为 0。随后 `scancel` 71206–71211、71214–71219（全 CANCELLED，未跑过）。未动 71034 / 71213 / 71222。STATUS §1b/§3 已改。
+
+---
+
+## 2026-09-20 12:55 — 双账号进度：Linzh 60 cell 齐；yuan 主实验 2C/3C 齐，还剩 3 卡收尾
+
+用户问两个号跑得怎样。`squeue`：yuan 3R + 14PD（其中 12 个仍是 09-19 挂起的 2C/SHU 基线）；Linzh 队列空。
+
+- **Linzh 71359–71371 全部 COMPLETED 0:0**（最慢 bl2c_eegpt 13.5 h）。拷贝树里 2C+SHU 的 labram/eegpt/cbramod 各 10，共 60 个 `result.json`。但 `result.json` mode 600、属主 Linzh，yuan 读不了，`merge_back.sh` 现在会失败。合并前必须在 Linzh 上 `chmod -R a+rX /share/workspace3/icassp_linzh_share/outputs`。挂起的 12 个作业不要 release，合并成功后再 scancel。
+- **yuan 主实验**：2C 50/50 ✅（S 链 71230 01:31 齐）；3C 55/55 ✅（71030 05:36 齐）；SHU 除 `seegnex@s_plif` 外全齐（71034 在训 split41 fold3 ep73，patience 12，~1 min/epoch，估再 6 个 cell + 本 cell ≈ 今晚）。
+- **yuan 基线还在跑**：71213 补 2C tcformer（首链 71212 三进程一卡 OOM，`failures__bl2c_tcformer.json` n=10；SHU+3C tcformer 已齐；71213 现 fold3 ep21，3/10，~1.2 h/cell → ~8 h）；71222 3C eegpt 3/11 fold3 ep21 patience 17（~1.2 h/cell → ~8 h）。3C labram/cbramod/ANN 已齐。
+- 估全部出齐：**今晚 21:00–23:00**（三卡并行）。STATUS §0/§1/§1b/§3 已改。
+
+---
+
+## 2026-09-19 12:30 — 中期结果快照（zs 臂）：2C 40/50、3C 36/55、无失败；`REPORT_interim_results_2026-09-19.md`
+
+用户问「现在出了哪些结果」。跑 `analyze_snn_round.py`（只给 `--run zs=`，脚本不需要 `--aligned-arm` 也能出 zs 家族）到 `outputs/analysis/snn_round/{wbci2c,wbci3c}_zs_interim_2026-09-19_1220/`。
+
+- **完整可用**：2C EEGNeX 83.35 ± 11.54（与 bench 逐被试全等，51 平）、EEGNet 82.53 ± 12.04（= bench）、**S-EEGNet 82.03 ± 12.07（vs EEGNet −0.49 pp，p = 0.0009）**；3C EEGNeX 69.41 ± 13.22（旧 patience-100 68.78，一致）、EEGNet 66.05、**S-EEGNeX-D 67.34（vs EEGNeX −2.07 pp，p = 0.13，n = 11）**。
+- **未完整（趋势，不是结论）**：2C D 6/10 → 82.53（−0.82 pp，p = 0.0006）；2C S 4/10、41 人 → 81.61（−1.84 pp，CI [−2.83, −0.84]）；3C S 3/11。能耗 3C：D 6.8×、S 16.8×（n = 3）。
+- 作业位置：71234（D）split42 fold1；71230 split42 fold0；71232 split41 fold4；71030 3C S fold3。今日 2C S cell 实跑 4.5–7.7 h（比 01:50 估的 5 h 长）→ 2C S 出齐改估 **09-20 清晨**，全部含对照 **09-21 中午**。STATUS §0/§1 已改。
+- 未按测试数字改主模型；eaz 无数据。
+
+---
+
+## 2026-09-19 02:00 — 用户拍板：砍全部 eaz + 2C zs S/D 拆三路并行（D-035）；已执行
+
+用户在选项卡选「砍掉全部 eaz + 拆 2C zs」、不申请 8 卡 QOS。执行顺序（都在 01:45–01:50）：
+1. `scontrol hold` 71034/71035 + 22 个 `bl_*`（防止空出的卡被它们抢走）。
+2. `scancel` eaz 臂 10 个：71025–71029、71032、71033、71036、71037，再 71024（运行中）。
+3. `scancel` 71019、71020，再 71018（运行中；`last.pt` 原子写，epoch 35 完好）。
+4. 提交 `c2zA` 71230→71231（S 折 0,1,2）、`c2zB` 71232→71233（S 折 3,4）、`c2zC` 71234（D）。71230 / 71232 立即上卡（gpu01）；日志核实：`split_seeds=[41, 42]`、fold0 跳过、fold1 **从 epoch 35 续训**、71232 从 split41 fold3 起；`.err` 空。
+5. 按 71034 → 71035 → bl 计划顺序 `release`；`priority/basic` 下 release 重排到队尾，最终队列：c2zC > shz > bl3c_ann > bl2c_* > bl_tcformer > blsh_* > bl3c_*。副作用：测 nice 时 71225 被设成 nice 10000（不可调回），它只是 bl3c_cbramod 的续跑链，无实质影响。
+
+新估：2C S+D 09-20 凌晨、SHU zs 09-20 中午、对照 09-21 上午全齐（原 09-22 下午）。更新：`docs/DECISIONS.md` D-035、`AGENTS.md` §3.5 / §4.3、`.cursor/rules/10-data-and-compute.mdc`、`docs/STATUS.md` §0 / §1 / §1b / §3。
+
+---
+
+## 2026-09-19 01:50 — 用户质疑「为什么还在跑 eaz」+ 要求 4 卡全开、加速；诊断结果（等用户拍板，未动作业）
+
+- **eaz 出处**：主实验 09-18 17:00 提交的 20 个作业里 10 个是 eaz 臂（71024–71029 / 71032–71033 / 71036–71037），按方案 v2 预注册（H1 = 对齐 × 网络类型交互）投的；用户 23:47「就做 zs 就行」是对**新对照模型**的回答（D-034）。Agent 失误：当时未提醒主实验 eaz 臂仍在队列、约 117 GPU-h。eaz 对论文比较表无用，只服务 H1。
+- **4 卡已全在用**：QOS `32cpu4gpu64g` = 每人 cpu=32 / gpu=4；每作业 8 CPU + 1 GPU，恰好卡满。集群此刻 6 张空卡（gpu02 ×4、gpu04 ×2）拿不到。集群存在 `64cpu8gpu400g` QOS（需管理员授权；排队作业 `scontrol update qos=` 即可换，不必取消）。
+- **一卡多进程无收益**：`srun --overlap nvidia-smi` 实测 S 版 83–100%、3C D 版 99–100%、eaz S 64–100%；只有 ANN 作业 10–66%（3 h 内跑完）。
+- **真正瓶颈**：2C S 版 10 个 cell（4–6 h/个）+ 10 个 D 串在一张卡上 ≈ 57 h → 09-21 中午。可按 `--folds-subset 0,1,2 / 3,4 / D` 拆 3 个作业并行（DRY_RUN 已核，cell 名保持 `__split41__/__split42__`；**按 `--split-seeds 41` 拆会丢 split 段、撞 D-030 的坑，不能用**）。
+- 方案（需用户明确同意，涉及 scancel）：砍 eaz + 拆 2C zs → 2C 主结果 09-20 凌晨、含对照 09-21 上午；保留 eaz 只拆 2C → 09-22 上午；8 卡 QOS 则再快约一半。
+
+---
+
+## 2026-09-19 01:35 — 按实测墙钟重估全部训练完工时间
+
+用户问全部任务何时跑完。用已落盘 `train_seconds` + 四个在跑作业的当前 epoch，而不是方案里的 2× EEGNeX 估时。
+
+**2C S 版是墙钟关键路径**：243–250 s/epoch（4.1 min），已完成 cell 6.2 h（92 ep）与 3.9 h（58 ep）。两组 S+D 各剩约 55–60 GPU-h；48 h 时限会在 09-20 16:30 / 18:17 切到接力链，预计 **09-21 中午** 这两组才结束。QOS 4 卡里有 2 卡被它们占到那时。
+
+**其余主实验**：2C ANN+S-EEGNet zs 今早可齐；3C zs ~09-20 00:00；SHU zs / 3C eaz 09-20 晚；SHU eaz 09-21 下午。
+
+**外部基线** ~95–110 GPU-h、nice=50，要等主实验让卡，**09-21 上午**才上卡，中位 **09-22 15:00** 出齐。
+
+合计剩余 ~320 GPU-h。全部训练：**中位 09-22 下午；乐观 09-22 上午；悲观 09-23 傍晚**（S cell 普遍跑到 90+ ep，或 FM 比估的慢 / 冒烟失败）。截稿 09-24 20:00，写作窗口中位约 2 天。
+
+未改作业、未 scancel。
+
+---
+
+## 2026-09-19 01:22 — 外部基线 adapter 验收通过并提交全部 11 个训练作业
+
+子 Agent 中断后由主 Agent 接手：补齐 TCFormer / LaBraM / EEGPT 测试与 PROVENANCE；修 LaBraM 权重加载（官方 `labram-base.pth` 的 `lm_head.*` 是预训练头，必须列为合法 unexpected，否则三个队列都建不起来）；四模型 × 三队列 CPU 前向全部 OK；pytest 外部套件 + 原测试集回归 exit 0；`make_baseline_configs.py --check` OK；`DRY_RUN=1` roster 12 条后实投。
+
+**提交（未动 `snn_*.yaml` / 未 scancel 主实验；`--nice=50`）**
+- 已有：`bl3c_ann` 71184→71185（3C ATCNet / EEG-Deformer / FBCNet，patience 25）
+- 新投：71206–71225（10 作业 × 2 链）= LaBraM / EEGPT / CBraMod × {2C, SHU, 3C} + TCFormer 三队列共卡
+- 清单 `logs/slurm/bl_job_ids.txt`。全部 PENDING（QOS / Priority），主实验 71018/71021/71024/71030 仍占用 4 GPU。
+
+**验收数字（describe / 测试断言）**
+- TCFormer paper yaml depth 5：58ch/2cls 133988；`@n2` 22ch/4cls T=1125 = **77820**（与 README 一致）
+- LaBraM-base：backbone 5,824,736；加载 219/247；kept 58/58 与 32/32
+- EEGPT large：58ch/2cls 25,356,128；SHU 丢 A1/A2（30 kept）；`target_encoder.*` strict
+- CBraMod：与既有 `test_cbramod.py` 一致
+
+**下一步**：盯 `_smoke/` 与 `failures__*_smoke.json`；主实验出齐后 `analyze_snn_round.py` 自动纳入同目录新 cell。未 commit。
+
+---
+
+
+用户 23:37–00:11 逐项确认：**只跑 zs 臂**、统一 bench 配方、EEGMoE → CBraMod、MDGEEG 删除、新 cell 写进主实验同 run 目录、配额内排队 + 小模型共卡、EEGPT 权重镜像件加脚注；
+并要求确认"打勾的 ANN 与 3 个 SNN 协议一致"→ 盘上核对：2C / SHU 的 `splits/*.json` 逐字节相同、每 cell `spec` 相同；**3C 列 ANN 是 patience 100**（`paper_baseline_3c_821_v1`）→ 用户拍板补跑 ATCNet / EEG-Deformer / FBCNet 的 3C（patience 25）。
+
+**做了什么**
+1. `docs/PROTOCOL_external_baselines.md` → locked；`docs/DECISIONS.md` **D-034**（另一窗口的论文会话已占 D-033，其三张表的行名单需按 D-034 改：去 MDGEEG / EEGMoE，加 CBraMod）。
+2. `weights -> ../Benchmark/weights` 软链接（gitignore `/weights`）；`code/models/external/{__init__,_common,README}.py|md`（静态名单 + 懒加载 `build_external`；重采样 / 通道词表 / 权重路径 helper）。
+3. **`code/models/registry.py` 唯一一次编辑**：`from .external import EXTERNAL_MODEL_NAMES`（纯常量）+ `build_model` 懒加载分支。验证：`compileall` ✓；导入 registry 不会触发任何 adapter 导入 ✓；`pytest tests` **106 passed / 1 skipped**（与剪枝后基线一致）✓；主实验入口 CPU 微型 run（SHU、10 被试、1 epoch）编辑前 `ok=2 failed=0` / 编辑后 `ok=2 failed=0` ✓ → 排队中的接力作业安全。
+4. `scripts/make_baseline_configs.py` → `code/configs/experiments/bl_{wbci2c,shu,wbci3c}_zs_lr1e4.yaml`：从 `snn_*_zs_lr1e4.yaml` 生成，只改 `source_config` / `models` / `micro_batch_per_model`（labram 64 / eegpt 32 / cbramod 64，LayerNorm 模型累积等价），`output_dir` 同主实验；`tests/models/test_external_integration.py` 断言协议块逐字相同（11 passed，12 skipped 等 adapter）。
+5. `scripts/slurm/baseline_gpu.sbatch`（一卡多进程；`SMOKE_FIRST=1` 先 1 折 2 epoch 冒烟到 `outputs/experiments/_smoke/`，失败即退出）+ `submit_baselines.sh`（读 `baselines_plan.txt`，提交前对每个 (config, model) 做 `resolve_model_params(dataset=…)` roster 检查；`--nice=50` 让主实验作业优先；`N_LINKS=2` 接力，第 2 链 `SMOKE_FIRST=0`）+ `baselines_plan.txt`（11 个作业：2C 三个 FM 各一卡、TCFormer 三队列共一卡、SHU / 3C 各三个 FM、3C ANN 补跑三进程一卡）。**未改任何现有 `scripts/slurm/` 文件。**
+6. **已提交 `bl3c_ann`：作业 71184 → 71185**（atcnet + eeg_deformer + fbcnet，3C，bench 配方；PD Priority，nice 50）。清单 `logs/slurm/bl_job_ids.txt`。
+7. 4 个子 Agent 并行（TCFormer / LaBraM / EEGPT / CBraMod），路径互斥（`code/models/external/<name>/**`、`code/configs/models/<name>.yaml`、`tests/models/test_<name>.py`），各自要过：58ch/2cls · 58ch/3cls · 32ch/2cls 前向、参数量对论文、权重 strict 加载 + sha256、格式转换单测、CPU 微型 run `ok=2 failed=0`。
+
+**下一步**：收 4 份 Agent 报告 → 审代码 → 全套 pytest + 集成测试 → `DRY_RUN=1` → 提交其余 10 个作业 → STATUS / 报告。
+
+---
+
+## 2026-09-18 23:30 — 用户要求补 5 个外部基线（MDGEEG / EEGMoE / EEGPT / LaBraM / TCFormer）：审计 + 协议草案，等确认后再动代码
+
+用户指令（23:12）：三个数据集上补跑这 5 个模型作对照，"对应最近跑的实验"；多子智能体并行、有检验；**先确认评估协议再执行**；代码后续公开。
+
+**审计结论**（细节 `docs/PROTOCOL_external_baselines.md` §0）：TCFormer 官方 PyTorch 可原样 vendoring；LaBraM / EEGPT 官方代码在
+EEG-FM-Benchmark（`../Benchmark/third_party/eeg_fm_benchmark/models/FM/`），权重已在 `../Benchmark/weights/`（EEGPT 为 HF 镜像转换件，未与 figshare 原件核对）；
+**MDGEEG** 官方仓库只有 `model.py`（门控多分支结构），训练算法未公开、论文闭源 → 需要 PDF；**EEGMoE 不在 EEG-FM-Benchmark 里**（README 只列了论文），
+论文 "code will be released"，无代码无权重 → 无法作 FM 基线，建议换 CBraMod。算力：QOS 硬上限 4 GPU/用户，全集群 40 卡全占，新作业最早 09-20 夜 ~ 09-21 上卡。
+
+**未动**：`code/`、`scripts/slurm/`、任何 YAML；仅新增 `docs/PROTOCOL_external_baselines.md`（status: proposed）。下一步：用户回答 7 个协议选择题 → 锁定（D-033）→
+共享脚手架 → 并行子 Agent（每模型一个，路径互斥）→ registry 懒加载一次性编辑 → pytest + CPU 微型 run → GPU 冒烟 → 提交。
+
+---
+
+## 2026-09-19 00:20 — 四路零上下文严格审查（kit 格式 / 构建 / 数字 / 领域评审）→ 可自动修正项全部修完并复核；5 个问题待学长拍板
+
+用户 23:35：「改完之后，新开一个对话，按照官方的格式对照改一下检查几遍……最严格的审查员，多专家智能体审查」。
+
+**做了什么**（细节与处置表见 `docs/reports/REPORT_manuscript_format_review_2026-09-18.md`）
+
+1. 三个后台子任务回收：五个新基线文献全部核实（LaBraM ICLR 2024；EEGPT NeurIPS 2024；TCFormer *Sci. Rep.* 15:32959, 2025；
+   **MDGEEG = Song et al., *Neurocomputing* 614:128889, 2025**；**EEGMoE = Gao et al., *IEEE TNNLS* 37(8), 2026，无公开代码/权重**）→
+   `paper/refs.bib` 新增 5 条；2027 kit 格式清单；`~/.local/bin/tectonic` 可用（加 `[T1]{fontenc}` 得 Times 度量），`pymupdf` 已装到 user site。
+2. 编译实测暴露的硬伤并修复：三张表超栏宽 10 / 54 / 10 pt → 表头去 `(\%)`、Macro-F1 → F1、`\tabcolsep` 3 pt → 198 / 224 / 198 pt < 244.7；
+   出处行 `\footnotesize`（8 pt）→ `\small`；`\enlargethispage` ×2、`\vspace{-1pt}` ×3 删除；前言按 kit 顺序重排（去 `multicol`/`float`/`\frenchspacing`/`\def\L`）；
+   `\bibliography{refs}`；子节标题 sentence case。
+3. 四个并行审查员（fresh context）共 ~50 条发现 → 修复：`refs.bib` `note` → `annote`（IEEEbib 会把 VERIFY/GitHub 打印进参考文献）；
+   `\thanks` 脚注 8 pt → `\renewcommand{\footnotesize}{\small}`（实测 8.97 pt）；头注中 5 处不准的 kit 表述重写；`\vfill\pagebreak` 冗余删除；
+   生成器重写：3C `--snn-3c` 误标先导 / 历史行不被替换、`--extra` 静默覆盖与 per_cell 误判、FBCNet-3C "从未跑"应为 `--` 而非 TBD、3C caption
+   "同预处理"不成立、基础模型上标 P、splice 正则锚定 + 标记唯一、覆盖率守卫、打印精度平局加粗、SHU 去冗余 Acc 列、候选测试数字移出稿件注释
+   （预注册纪律）、`--snn-*` 默认不再指向先导、新增 `--include eegnex` / `--layout compact` / `--final` / `--pct-digits`。
+4. 复核：47 个数字独立复算一致；重编译 6 页（旧正文 5 页 + 参考文献页），表无 overfull，字体全 Type 1 内嵌，参考文献无 VERIFY 泄漏；
+   生成器 8 条路径测试通过（含拒绝重复标记 / 键冲突 / `--final` 残留 TBD）。
+5. 文档：报告 `docs/reports/REPORT_manuscript_format_review_2026-09-18.md`（含待拍板 5 项）；`docs/STATUS.md`、`docs/DECISIONS.md` D-033 同步。
+
+**待学长拍板**：EEGNeX 行去留（评审视为最大硬伤）；Ours 行按预注册还是"最好者"；三张双行表（~0.8 页）vs 一张紧凑 `table*`（~0.3 页）；
+3C 基线是否用 bench 配方补跑；EEGMoE → CBraMod。**未 commit。**
+
+---
+
+## 2026-09-18 23:40 — 稿件底稿切换为团队 ICASSP 2026 论文（`old_reference.tex`），按 2027 模板对齐；三张按数据集分的结果表已生成并放入
+
+用户指令：速成论文，以去年团队中的 ICASSP 论文 `old_reference.tex` 为模板按 2027 官方 `Template.tex` 改格式；实验表改为三张（2C / SHU / 3C）；
+模型 = 截图打勾的 EEGNet / FBCNet / ATCNet / EEG-Deformer（DeepConvNet、EEGNeX 不进）+ 另一窗口在跑的 MDGEEG / EEGMoE / EEGPT / LaBraM / TCFormer（占位）
++ 三个 SNN 候选里最后最好的一个（先占位）；其他正文不动；不要与另一窗口的模型任务冲突。
+
+**做了什么**
+
+1. 核对另一窗口的足迹：`git status` / 6 小时内改动只有本会话链早先的文件，两仓库里都还没有 MDGEEG / EEGMoE 的代码（LaBraM / EEGPT / TCFormer 在
+   `../Benchmark/third_party/`）。本次只新增 `scripts/build_dataset_tables.py`、改根目录 `old_reference.tex` 与文档，不碰 `code/`、`scripts/slurm/`、任何模型文件。
+2. `old_reference.tex`（用户放在仓库根）**按 2027 kit 对齐**：文件头注释（页数 / 5 页只放参考文献 / PDF 与字体 / 单盲 / ORCID / AI 披露）；
+   `\usepackage` 拆成 kit 的 `spconf,amsmath,graphicx,hyperref` + 2026 论文的 `booktabs,multirow,multicol,amsfonts,float` + `xcolor`；
+   新增占位宏 `\tbd`（红色 TBD）；`\ninept` 保留（kit 允许的最小 9 pt）；`\bibliography{strings}` → `{strings,refs}`（kit 形式；`refs` = `paper/refs.bib`）。
+   题目 / 作者 / 摘要 / 正文 / 消融表 / 图 **一律未动**（只在 `\name` 前加了 ORCID 与 AI 披露的注释）。
+3. 两张旧对比表（Cocktail / KUL）→ **三张队列表**（`tab:comparison_2c` / `tab:comparison_shu` / `tab:comparison_3c`），放在原位（Sec. 4.1），
+   正文那句 `Table~\ref{...}` 改指新标签。表样式沿用 2026 论文（模型名 + `\footnotesize` 出处行、`\multirow{2}{*}` 数值、逐列最优加粗）。
+   行：EEGNet (J. Neural Eng. 2018) / FBCNet (arXiv 2021) / ATCNet (IEEE TII 2023) / LaBraM (ICLR 2024) / EEGPT (NeurIPS 2024) / EEG-Deformer (IEEE JBHI 2025) /
+   TCFormer (2025) / MDGEEG / EEGMoE / **S-EEGNeX (Ours)**；未跑的格为 `\tbd`；三个 SNN 候选的最新数字（SHU 先导 split 41）以注释列在表下，学长定了再 `--ours` 生成。
+   列：2C / 3C = Acc ± SD、Macro-F1、AUC；SHU = BAcc ± SD（主指标）、Acc、Macro-F1、AUC（2C/3C 类别平衡，BAcc ≡ Acc；κ 在 3C 表里没有）。
+4. 新脚本 `scripts/build_dataset_tables.py`（CPU）：读 2C/SHU bench `per_model.csv`、3C `paper_baseline_3c_821_v1/tables/per_cell.csv`（ddof=1）、
+   `analyze_snn_round.py` 的 `per_model.csv`（`--snn-*`）、外部新基线 CSV（`--extra COHORT=csv`，bench / analyze 两种格式自动识别，`--alias` 映射键名）→
+   `outputs/analysis/dataset_tables_2026-09-18/{tab_2c,tab_shu,tab_3c}.tex`、`dataset_tables_long.csv`（每格来源）、`dataset_tables.md`；
+   `--splice old_reference.tex` 在 `% >>> AUTO-GENERATED COHORT TABLES BEGIN/END` 标记间整体替换。数字与 bench 表逐格核对一致
+   （EEGNet 2C 82.53 ± 12.04、ATCNet 83.28 ± 12.00、3C EEG-Deformer 68.49 ± 14.83 …）。
+5. 结构自检：环境 / 花括号配对、`\ref` 全部有定义、`\tbd` 67 处（都是占位格）。集群无 TeX，编译核对交给 Overleaf（或本机）。
+6. 多智能体并行：文献核实（LaBraM / EEGPT / TCFormer / MDGEEG / EEGMoE 的 BibTeX）、2027 格式核对清单、集群 TeX 编译器安装——结果回来后补进
+   `paper/refs.bib` 与本条。
+
+**未做 / 待定**：MDGEEG / EEGMoE 的出处与年份（另一窗口跑的是哪篇，待核）；「Ours」行选哪个候选（主实验后）；3C 目前全是论文配方（patience 100）的
+LOSO 数字，caption 已注明，主实验 3C 出齐后换成 bench 配方；正文 / 摘要 / 题目由用户按方向改。**未 commit。**
+
+---
+
+## 2026-09-18 19:45 — 学长要的对比模型表：6 个已发表基线（带年份）+ SNN 先导行，已进 overleaf Table 1；报告 + 2025/26 候选基线
+
+学长微信（09-18 17:10 前后）：「效果跟 eegnex 差不多就直接写论文 / 到时候不对比这个 eegnex / 再加几个 25、26 年的模型 / 先把要对比的模型的表格拿出来 /
+之前那个 eegnex 的结果是哪几个数据集 / 列一个表格，直接丢 overleaf，表格格式不要改」。用户转达：改 overleaf 的表为我们要对比的模型 + 每个模型标年份 + 把跑完的结果列成表。
+
+**做了什么**
+
+1. 核对状态：主实验 20 作业里 4 组 RUNNING（71018 / 71021 / 71024 / 71030），落盘 cell 2C 0、3C 4/55、SHU 25（先导）；`n_cells_failed` 全 0。
+   **能进表的 SNN 数字只有 SHU 先导（split 41，lr 1e-4，zs 臂）**。
+2. 新脚本 `scripts/build_comparison_table.py`（CPU）：读 2C/SHU bench `per_model.csv`、3C `paper_baseline_3c_821_v1/tables/per_cell.csv`（ddof=1 重算，
+   与 RESULTS_TRUTH 一致）、先导 `shu_pilot_lr1e4/{per_model,energy}.csv` → `outputs/analysis/comparison_table_2026-09-18/{comparison_long.csv（每格带来源）,
+   comparison_table.md, pilot_paired.md, tab_main_rows.tex}`。参数量统一 58 ch（SNN 用 `build_model` CPU 计数：S-EEGNeX 58,850、S-EEGNet 3,028）。
+3. `paper/main.tex` Table 1（`tab:main`）：**格式不变**（同 `tabular{lccccc}` + booktabs），行换为 DeepConvNet (2017) / EEGNet (2018) / FBCNet (2021) / ATCNet (2023) /
+   EEGNeX (2024) / EEG-Deformer (2025) + S-EEGNet / S-EEGNeX-D / S-EEGNeX-S；SHU 先导数标 †、3C 论文配方标 ‡，2C/3C SNN 格为 `\todo{}`；注释里写了重生成命令、
+   学长「不比 eegnex」的标记、4 个 2025/26 候选。18 条目中 12 个自研 / 消融条目不进论文表（只进报告）。
+4. `paper/refs.bib`：EEG-Deformer 卷期核实为 IEEE JBHI 29(3):1909–1918, **2025**（`ding2025deformer`）；新增 `mane2021fbcnet`；Zhang et al. 2025（*Neural Networks*
+   191:107741，"A lightweight spiking neural network for EEG-based motor imagery classification"，代码 github.com/Zhr1110/SnnForMI）题目作者已核实；
+   候选 `wang2025cbramod`（ICLR 2025）、`liu2025mirepnet`（arXiv 2025，预训练不含 SHU/WBCIC-SHU）。
+5. 报告 `docs/reports/REPORT_comparison_table_2026-09-18.md`：答「eegnex 是哪几个数据集」（3 个队列）；论文表；先导内部配对（S −1.38 p=0.04、D −0.48 n.s.、
+   S-EEGNet −0.94 p=0.08；EEGNeX split 41 vs 41+42 差 −0.83，即 † 行不能直接减 bench 行）；18 条目全表；主实验进度；三处不能混比的口径；
+   EEGNeX 行建议保留的三条理由；**2025/26 候选基线表**（Zhang 2025 SNN > CBraMod > MIRepNet > DSGNet，含接入成本 / GPU-h / 兼容性）与时间预算（最多加 1–2 个）。
+6. `docs/DECISIONS.md` D-032；`docs/STATUS.md` §0–§3 同步。
+
+**未做 / 待学长**：选 2025/26 基线；EEGNeX 行去留；3C 列口径（三选一）；年份放法（括号 vs 单独列）。**未 commit。**
+
+---
+
+## 2026-09-18 17:30 — 目录迁移 `SYX/eeg-mi-online` → `SYX/ICASSP`；剪遗留；灵魂记忆重写；论文模板落位
+
+学长指令：「在 SYX 下新建 ICASSP，我们到这个里面做」。后续 Cursor 会话只在 `SYX/ICASSP`（本目录）与 `SYX/Benchmark` 打开，不再在 `SYX` 顶层。
+
+**做了什么**
+
+1. `mv SYX/eeg-mi-online SYX/ICASSP`（同一 git 仓库，历史完整；HEAD `1e183c9` + 未提交的 SNN 轮改动）；旧路径留兼容软链接
+   `SYX/eeg-mi-online -> ICASSP`。正在跑的 71018 在改名后照常写日志与 checkpoint（17:29:52 epoch 6 落盘），20 个主实验作业
+   （WorkDir / Command 均为旧路径）经软链接继续有效。**作业全部结束前不删软链接。**
+2. 剪掉跨 session 时代的遗留到 `SYX/_archive/eeg-mi-online_legacy_2026-09-18/`（435 MB）：`0_docs/ 1_session_drift/ 2_baseline/
+   3_online_adaptation/ 4_experiments/ 5_papers/ backup/ inbox/ models_eeg_foundation/`、`FOUNDATION_E2E_ROUTE_PLAN.md
+   PHASE3_ROUTE_PLAN.md proposal.md experiment_log.md results.md`、`docs/report_824_s4erp_adv_3class.md`、8 个一次性脚本 +
+   9 个旧 sbatch、快照里的跨 session run（`alignment_baseline_v1 cross_session_3to2_v1 prototype_drift_v1 session_*_v1
+   training_viz_v1 tta_v1 analysis/ legacy_root_archive_2026-06-10_outputs/`）。`4_experiments/CROSS_SUBJECT_PROTOCOL_MEMO.md`
+   保留到 `docs/`。**`code/ tests/ scripts/slurm/{_common.sh,bench_gpu.sbatch,submit_snn.sh,submit_bench.sh,shu_*.sbatch}`
+   一律未动。** 快照保留全部跨被试 run（2C/SHU bench、SHU 5 折旧协议、3C 四批 + 域对抗 + 被试内天花板）。
+3. `SYX/eeg-fm-bench` → `SYX/Benchmark`（无作业依赖）；`SYX/HANDOFF_2026-09-14.md` → `Benchmark/docs/`；
+   `SYX/{MEETING_BRIEF,REPORT_for_senior}_2026-09-18.md` → `docs/reports/`。
+4. 灵魂记忆重写为 `../Benchmark` 同款纪律（4 份活文档）：`AGENTS.md`（规则 + 浓缩事实）、`docs/STATUS.md`（作业 / 倒计时 / 下一步）、
+   `docs/PRIOR_RESULTS.md`（3 队列 × 18 ANN 权威摘要）、`docs/DECISIONS.md`（D-001~D-029）、`docs/ARCHITECTURE.md`、
+   `docs/ICASSP2027_SUBMISSION.md`、`README.md`、`CLAUDE.md`、`.cursor/rules/`（6 条，替换旧 8 条）。
+5. `paper/`：ICASSP 2027 官方模板（2026-09-18 自 CMS 下载：`spconf.sty`, `IEEEbib.bst`, `Template.tex/pdf`）+ `main.tex` 骨架
+   （按 PLAN §6 分节、表图占位、limitation 与 AI 披露占位）+ `refs.bib`（必引清单占位，元数据待核）+ `README.md`（编译方式；集群无 TeX）。
+6. 3C manifest `outputs/processed/wbci_shu_3c_mat_clean/processed_manifest.csv` 的 33 行 `npz_path`/`meta_path` 改写为新路径。
+7. 核对截稿：官网 Call for Papers = **September 23, 2026**（AoE → 北京 09-24 20:00）；CMS Paper Kit 页仍显示 16 September（未更新）
+   → 投稿前登录 CMS 确认。新要求：每位作者 ORCID；致谢中披露 AI 生成内容。
+
+8. **18:00–18:20 四线并行审计（路径 / Slurm 运行时 / 文档 / Git）后的修复**：
+   - `eegbench` conda 环境的 editable 安装仍指向 `SYX/eeg-fm-bench/src`（`import eegbench` 报错）→ 已重新 `pip install -e ../Benchmark --no-deps`。
+   - `inbox/cross_subject_protocol_research.md`（协议文献依据全文）从归档移回 `docs/CROSS_SUBJECT_PROTOCOL_RESEARCH.md`，MEMO 引用同步。
+   - **D-030**：SHU 先导 25 个 cell 目录（`snn_shu_zs_lr1e4_v1`，outputs + checkpoints）由单划分命名改为 `__split41__` 命名，否则 71034 会重训并使 split 41 双计；`cell_signature` 不含路径，`load_run` 核对 125 行 / 25 cell 正常。
+   - `.gitignore`：快照目录只放行 `README.md`；学长微信截图不进 git；官方模板 PDF 放行；新增 `.gitattributes`（kit 文件 `-text`）。
+   - 审计结论：20 个作业经软链接解析全部有效；`bench_gpu.sbatch` 已被 Slurm 冻结拷贝，但 `_common.sh`/`code/**`/`snn_*.yaml` 在作业启动时才读（排队期间不能改）；全套 pytest 158 passed / 1 skipped；`compileall` 干净；Git 无数据丢失（291 处删除全部在归档或 HEAD 中）。
+
+9. **18:45 代码剪枝（D-031，用户要求只留核心）**：用主实验真实命令跑 CPU 微型 run 记录 `sys.modules`（51 个模块 = import 闭包），
+   闭包外且不被保留脚本/测试引用的 50 个模块（`code/{tta,online,legacy,visualization}`、`models/dsgnet`、`methods/t3a`、6 个旧 datasets 适配器、
+   7 个跨 session 协议、5 个旧汇总器、2 个旧预处理编排）、33 个旧实验 YAML、`tests/tta/`、冒烟/被取代产物、快照里的 `cross_subject_5fold_v1` 与
+   `foundation_cross_subject_v1` 全部移入 `../_archive/`。`code/` 115 → 64 个 .py。**闭包内文件（`runners.py` 死函数、registry 弃用模型等）不动**，
+   作业结束后第二轮（清单在 STATUS §4）。验收：compileall ✓、`pytest tests` 106 passed / 1 skipped、同一微型 run 剪枝后重跑 `ok=4 failed=0`、
+   `submit_snn.sh` roster ✓；18:47 在剪枝后的树上启动的作业 71021 / 71024 加载与训练正常。
+10. 18:28–18:47 集群释放：71030（3C zs）、71021（2C zs 第 2 组）、71024（2C eaz 第 1 组）陆续启动，与 71018 一起用满 4 GPU。
+11. **19:00 文档一致性审计后的修复**：
+    - **`scripts/analyze_snn_round.py` 臂名 bug**：预注册家族与 H1 写死在角色 `zs`/`ea`，而所有文档的主实验命令传 `eaz=` → H1 会被静默跳过。
+      加 `--baseline-arm/--aligned-arm` 映射 + 家族为空即报错 + REPORT 头部注明臂映射与"8 项家族早于 D-012"；EXPLORATORY 补 D 版 / S-EEGNet / 三消融 / causal 的 zs 臂比较。
+      用它重算先导：`outputs/analysis/snn_round/shu_pilot_lr1e4/`（S −1.38 p=0.040；D −0.48 CI[−1.84,+0.88] p=0.16；S−D −0.90 p=0.070）与
+      `shu_pilot_lr1e3/`（EA 效应 ANN +1.39 / SNN +0.87，H1 −0.51；AdaBN@eaz +0.63 p=0.039；afe −1.82 p=0.028；spk +0.50；noinit −0.30）——
+      §0.5 引用的每个数字现在都能指回一行 CSV。所有文档命令补 `--aligned-arm eaz`。
+    - PLAN：§0.2 行 9（EA 后标量归一化）标为已被 D-021 推翻；§0.4 补 `pq3`（eaz）臂与决策规则；§1–§7 加"v1 原文"横幅并对 posterior drift /
+      包络检测器 / log-var / 保相位定理 / streaming / anytime 逐处划线替换；frontmatter 更新。
+    - 措辞修正：24 个 snn 配置（非 18）；对齐块是 3×3、H1 取 2×2 子集；`failures__*.json` 恒存在、看 `n_cells_failed`；D-021 补"验证集上 zs 仍高于所有
+      EA 臂"；D-024 补消融只在 lr 1e-3；`code/configs/datasets/*.local.yaml` 本集群不存在；main.tex 参数量统一 58ch 口径并加 `\todo`；
+      B-1..27 → 原文编号 1–27；`docs/DSGNET_SHUv5_3C_ANCHOR.md` 从归档移回（3C 协议与"DSGNet baseline 被低估"的依据）；REPRODUCE §5–6 指向快照；
+      STATUS 补 8 条提交命令、BCI IV 2a pkl 反序列化提示、Slurm 估算的完成时间；SETUP/progress/reports/HANDOFF 补 frontmatter。
+
+12. **19:10 用户纠正：选实验、定框架、写论文由学长决定。** `paper/main.tex` 里我预填的标题 / 摘要 / 三条贡献已全部退回 `\todo{}` 占位，只留官方模板与候选分节骨架；
+    `AGENTS.md` §1 题目方向标为"候选，待学长拍板"、§7 加先决条件、`40-paper.mdc` 与 `STATUS.md` 同步——**学长拍板前 Agent 不写正文、不替学长挑实验。**
+
+**状态**：主实验 8 组 20 作业（4 个 RUNNING：71018 / 71021 / 71024 / 71030；其余 PENDING）。先导 120 cell 完成。详见 `docs/STATUS.md`。
+**下一步**：盯作业；BCI IV 2a loader（09-20 早）；补分析脚本（非劣性 bootstrap / 精确·置换 Wilcoxon / HL+BCa / Bonferroni–Dunn / Page's L）；
+2C 出结果后填两块主表；09-21 起写作。**仍未 commit**（等用户授权）。
+
+---
+
+## 2026-09-18 — 新主线：Spiking EEGNeX（ICASSP 2027，截稿 9/24 20:00 北京）。方案 v2 + 代码 + SHU 先导
+
+项目 09-13 备份后于 09-18 从 `SYX_backup_2026-09-13.tar.gz` 恢复到原位（HEAD `1e183c9`，15,588 条目核对一致）。
+学长方向：「改 EEGNeX / 加点别的 / 套到 SNN」。本轮为与学长并行的版本，同框架同划分，可与 18 个 bench ANN 逐被试配对。
+
+**方案**：`docs/PLAN_spiking_eegnex_icassp2027.md`（v1 → 四位专家评审 → v2，§0 有逐条采纳表）。
+框架改为"非劣性 + 对齐交互"（Zhang et al. *Neural Networks* 2025 已发表时间原生 PLIF+EA，不能claim首创）。
+
+**代码**（全部新增/改动通过 158 个测试，GPU 冒烟 70222 / 70305 通过）：
+- `code/models/spiking/{neurons,models,adapter}.py`：S-EEGNeX / S-EEGNet；LIF/PLIF/HetPLIF（逐层 τ 初值 [1.5,4]/[1.5,8]）；
+  `repeat`（T=4）与 `stream`（EEG 采样轴 = 脉冲时间轴，1000/250/63 步）编码；LI 膜电位读出；编码层硬复位、深层软复位；
+  送入神经元的 BN 初始化 β=0.5（池化后 γ=2）；mask-only `SpikeDropout`；稳态发放率正则；逐层 MAC/AC 表 + 实测发放率能耗。
+- `code/experiments/cross_subject_protocols.py`：归一化语法 `ea_session[_mu]+<trial_norm>`（逐 session EA，`_mu` 用 8–30 Hz 参考协方差）；
+  评估时 AdaBN（`eval.adabn`，`adabn_*` 列，不进签名）；逐被试 `spike_stats`。`e2e_trainer.E2ESpec.adabn`、`runners.py` 传递。
+- `code/configs/models/{seegnex,seegnet}.yaml`；`scripts/make_snn_configs.py` 生成 18 个 `snn_*.yaml`（{SHU,2C,3C}×{zs,ea,eamu}×{lr1e4,lr1e3}，
+  cross_subject 块与 bench 完全一致，`curves: false`，`eval.adabn: true`）；`scripts/slurm/submit_snn.sh`；`scripts/analyze_snn_round.py`
+  （预注册配对检验 + H1 差之差 + 能耗表 + bench 18 条目 `+bench` 配对）；`tests/models/test_spiking.py`。
+- 3C processed 数据重生成（作业 70221，33 session 全 ok）。
+
+**决定**：EA 后只做逐 trial 标量归一化（不再逐通道 z-score）；主 S 模型用 'same' 填充（因果版为消融）；chunk 编码删除；
+lr 由 SHU split-41 先导按**验证集** macro-F1 选；SHU 主指标 balanced accuracy；2C 为确认队列，SHU/3C 为复现队列；预注册家族 5 项（见 PLAN §0.3）。
+
+**在跑**（02:20 提交，v2 代码）：SHU 先导 pz3/pz4/pe3/pm3/pa3（作业 70306/70308/70310/70313/70315 + 接力）。
+修订前代码的先导（70248–70255）已取消；其 eegnex z-score cell 复用，旧 EA(+zscore) 臂归档为 `_superseded_*`（4 个 eegnex cell：EA 比 z-score +0/+1.4/+4.2pp，AdaBN 再 +0.5–1pp）。
+
+**下一步**：先导出结果 → 选 lr / EA 变体 → 提交 2C、SHU(split 42 + s_lif/s_plif)、3C 主实验；BCI IV 2a loader（截止 9/20 早）；
+分析脚本补非劣性单侧 bootstrap、精确/置换 Wilcoxon、HL+BCa CI、Bonferroni–Dunn（k=19）。
+**未 commit**（本轮全部改动在工作区，等用户/学长授权后提交）。
 
 ---
 

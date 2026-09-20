@@ -1,0 +1,25 @@
+# Comparison-model split-seed 43 (D-036): 2C and SHU only. 3C stays LOSO (seed 0);
+# do not add a second split there. One line = one single-GPU job.
+#   <job_name> ; <config>|<models>|<tag> [; <config>|<models>|<tag> ...]
+# Submit from the Linzh share tree with:
+#   NICE=0 N_LINKS=2 IDS_FILE=logs/slurm/s43_job_ids.txt \
+#     bash scripts/slurm/submit_baselines.sh scripts/slurm/baselines_plan_s43.txt
+# Do not pack 2C TCFormer with anything (71212 OOM). FM models stay one-per-GPU.
+# Cells land in snn_<ds>_zs_lr1e4_v1 as `model__split43__foldK__seed0`.
+# 9 runnable models × 5 folds × 2 cohorts = 90 cells. MDGEEG / EEGMoE omitted. No SNN.
+
+# --- 2C (51 subjects, 5 cells per model) ---
+s43_2c_ann ; code/configs/experiments/bl_wbci2c_zs_s43.yaml|eegnet_official,fbcnet,eegnex|s43_2c_ann
+s43_2c_atc ; code/configs/experiments/bl_wbci2c_zs_s43.yaml|atcnet,eeg_deformer|s43_2c_atc
+s43_2c_lab ; code/configs/experiments/bl_wbci2c_zs_s43.yaml|labram|s43_2c_lab
+s43_2c_gpt ; code/configs/experiments/bl_wbci2c_zs_s43.yaml|eegpt|s43_2c_gpt
+s43_2c_cbr ; code/configs/experiments/bl_wbci2c_zs_s43.yaml|cbramod|s43_2c_cbr
+s43_2c_tcf ; code/configs/experiments/bl_wbci2c_zs_s43.yaml|tcformer|s43_2c_tcf
+
+# --- SHU (25 subjects, 5 cells per model) ---
+s43_sh_ann ; code/configs/experiments/bl_shu_zs_s43.yaml|eegnet_official,fbcnet,eegnex|s43_sh_ann
+s43_sh_atc ; code/configs/experiments/bl_shu_zs_s43.yaml|atcnet,eeg_deformer|s43_sh_atc
+s43_sh_lab ; code/configs/experiments/bl_shu_zs_s43.yaml|labram|s43_sh_lab
+s43_sh_gpt ; code/configs/experiments/bl_shu_zs_s43.yaml|eegpt|s43_sh_gpt
+s43_sh_cbr ; code/configs/experiments/bl_shu_zs_s43.yaml|cbramod|s43_sh_cbr
+s43_sh_tcf ; code/configs/experiments/bl_shu_zs_s43.yaml|tcformer|s43_sh_tcf

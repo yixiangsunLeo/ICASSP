@@ -1,0 +1,28 @@
+---
+description: Data boundaries, machine-local paths, Slurm and running-job protection
+alwaysApply: true
+---
+
+# Data, paths, compute
+
+- External raw/processed data under `/share/workspace2/moto_imagination/{WBCIC_SHU,SHU}` is **read-only**.
+  Paths come only from `code/configs/paths.local.yaml` (gitignored; the only local file on this cluster —
+  `code/configs/datasets/*.yaml` are `/CHANGE/ME` placeholders and experiment YAML use the logical keys
+  `processed_manifest` / `shu_processed_manifest` / `wbci_3c_processed_manifest`); never hard-code absolute paths
+  in Python or experiment YAML. 3C processed data lives in
+  `outputs/processed/wbci_shu_3c_mat_clean/` (do not delete; pending 3C jobs read it).
+- Heavy work goes through Slurm (`scripts/slurm/submit_snn.sh`, template `scripts/slurm/bench_gpu.sbatch`),
+  conda env `mi_torch_cu118`, partitions `gpu2node`/`gpu3node`, QOS 4 GPU / 48 h per job. GPU jobs fail fast
+  without CUDA. Never train on the login node; analysis scripts (`scripts/analyze_snn_round.py`) are fine there.
+- **Main-experiment zs jobs 71021–71023, 71030–71031, 71034–71035, 71230–71234, baseline jobs 71184–71185,
+ 71206–71225 and AdaHGNN-MI jobs 71825–71830 are running/queued** (lists in `logs/slurm/{snn_*,bl,bl_adahgnn}_job_ids.txt`; the eaz arm was cancelled 09-19, D-035). Do not
+  `scancel` them, and do not edit `code/`, `scripts/slurm/`, `code/configs/experiments/snn_*.yaml` or
+  `code/configs/paths.local.yaml` while they run unless the user explicitly asks. Re-submitting the same
+  command is always safe (finished cells are skipped; interrupted cells resume from `last.pt`).
+- The compatibility symlink `/share/home/yuan/SYX/eeg-mi-online -> ICASSP` must stay until those jobs finish
+  (their WorkDir/Command use the old path).
+- Never overwrite a completed run; new settings need a new `run_id` / `--out`. Never delete `outputs/`,
+  `checkpoints/`, `logs/`, `results_snapshot_2026-09-13/` because they are large.
+- Do not `git commit` or `push` unless the user explicitly asks. Exception: the 3090 agent follows
+  `HANDOFF.md` Phase 12 (`scripts/sync_results_git.sh`) for `result.json` + analysis tables only.
+  Never `git clean -fd` or force-push. Portable remote: `https://github.com/yixiangsunLeo/ICASSP`.

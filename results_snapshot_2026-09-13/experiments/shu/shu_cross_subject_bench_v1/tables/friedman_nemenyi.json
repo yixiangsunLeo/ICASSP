@@ -1,0 +1,30 @@
+{
+  "friedman_stat": 48.15108151701872,
+  "friedman_p": 8.142111065316527e-05,
+  "k": 18,
+  "N": 25,
+  "avg_ranks": {
+    "eegnex": 3.92,
+    "eeg_deformer": 8.18,
+    "atcnet": 8.22,
+    "s4erp": 8.56,
+    "atcnet@noattn": 8.84,
+    "s4erp_dw@f16d8": 8.84,
+    "atcnet@tcn8": 9.0,
+    "atcnet@nwin1": 9.56,
+    "eegnet_official": 9.66,
+    "dualcd_s4_flatten": 9.8,
+    "dualcd_transformer": 9.88,
+    "s4erp_dw@f64d2": 10.1,
+    "deepconvnet": 10.26,
+    "dualcd_s4_timepatch": 10.3,
+    "fbcnet": 11.0,
+    "s4erp_dw@f16d2p": 11.06,
+    "atcnet_s4@noattn": 11.66,
+    "atcnet_s4": 12.16
+  },
+  "critical_difference": 5.267798526431738,
+  "alpha": 0.05,
+  "higher_is_better": true,
+  "dropped_models": []
+}

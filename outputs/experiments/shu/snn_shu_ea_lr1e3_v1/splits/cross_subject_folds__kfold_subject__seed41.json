@@ -1,0 +1,247 @@
+{
+  "dataset": "shu",
+  "protocol": "kfold_subject",
+  "n_folds": 5,
+  "val_mode": "subjects",
+  "split_seed": 41,
+  "train_sessions": [],
+  "val_sessions": [],
+  "n_subjects": 25,
+  "normalization": "ea_session+per_sample_global",
+  "subjects": [
+    "sub-001",
+    "sub-002",
+    "sub-003",
+    "sub-004",
+    "sub-005",
+    "sub-006",
+    "sub-007",
+    "sub-008",
+    "sub-009",
+    "sub-010",
+    "sub-011",
+    "sub-012",
+    "sub-013",
+    "sub-014",
+    "sub-015",
+    "sub-016",
+    "sub-017",
+    "sub-018",
+    "sub-019",
+    "sub-020",
+    "sub-021",
+    "sub-022",
+    "sub-023",
+    "sub-024",
+    "sub-025"
+  ],
+  "trials_per_subject": {
+    "sub-001": 492,
+    "sub-002": 482,
+    "sub-003": 484,
+    "sub-004": 475,
+    "sub-005": 475,
+    "sub-006": 469,
+    "sub-007": 488,
+    "sub-008": 479,
+    "sub-009": 493,
+    "sub-010": 480,
+    "sub-011": 494,
+    "sub-012": 458,
+    "sub-013": 489,
+    "sub-014": 479,
+    "sub-015": 473,
+    "sub-016": 486,
+    "sub-017": 493,
+    "sub-018": 494,
+    "sub-019": 469,
+    "sub-020": 489,
+    "sub-021": 482,
+    "sub-022": 480,
+    "sub-023": 486,
+    "sub-024": 437,
+    "sub-025": 462
+  },
+  "folds": [
+    {
+      "fold": 0,
+      "train_subjects": [
+        "sub-001",
+        "sub-003",
+        "sub-004",
+        "sub-007",
+        "sub-008",
+        "sub-010",
+        "sub-011",
+        "sub-012",
+        "sub-013",
+        "sub-014",
+        "sub-015",
+        "sub-017",
+        "sub-018",
+        "sub-021",
+        "sub-022"
+      ],
+      "val_subjects": [
+        "sub-002",
+        "sub-019",
+        "sub-020",
+        "sub-023",
+        "sub-024"
+      ],
+      "test_subjects": [
+        "sub-005",
+        "sub-006",
+        "sub-009",
+        "sub-016",
+        "sub-025"
+      ],
+      "train_sessions": null,
+      "val_sessions": null
+    },
+    {
+      "fold": 1,
+      "train_subjects": [
+        "sub-002",
+        "sub-004",
+        "sub-005",
+        "sub-006",
+        "sub-007",
+        "sub-008",
+        "sub-009",
+        "sub-011",
+        "sub-013",
+        "sub-015",
+        "sub-016",
+        "sub-021",
+        "sub-022",
+        "sub-023",
+        "sub-025"
+      ],
+      "val_subjects": [
+        "sub-014",
+        "sub-017",
+        "sub-018",
+        "sub-019",
+        "sub-024"
+      ],
+      "test_subjects": [
+        "sub-001",
+        "sub-003",
+        "sub-010",
+        "sub-012",
+        "sub-020"
+      ],
+      "train_sessions": null,
+      "val_sessions": null
+    },
+    {
+      "fold": 2,
+      "train_subjects": [
+        "sub-001",
+        "sub-003",
+        "sub-007",
+        "sub-009",
+        "sub-010",
+        "sub-011",
+        "sub-012",
+        "sub-014",
+        "sub-015",
+        "sub-016",
+        "sub-017",
+        "sub-018",
+        "sub-020",
+        "sub-024",
+        "sub-025"
+      ],
+      "val_subjects": [
+        "sub-005",
+        "sub-006",
+        "sub-008",
+        "sub-019",
+        "sub-023"
+      ],
+      "test_subjects": [
+        "sub-002",
+        "sub-004",
+        "sub-013",
+        "sub-021",
+        "sub-022"
+      ],
+      "train_sessions": null,
+      "val_sessions": null
+    },
+    {
+      "fold": 3,
+      "train_subjects": [
+        "sub-001",
+        "sub-002",
+        "sub-004",
+        "sub-005",
+        "sub-006",
+        "sub-007",
+        "sub-008",
+        "sub-009",
+        "sub-012",
+        "sub-013",
+        "sub-015",
+        "sub-020",
+        "sub-021",
+        "sub-024",
+        "sub-025"
+      ],
+      "val_subjects": [
+        "sub-003",
+        "sub-010",
+        "sub-014",
+        "sub-016",
+        "sub-022"
+      ],
+      "test_subjects": [
+        "sub-011",
+        "sub-017",
+        "sub-018",
+        "sub-019",
+        "sub-023"
+      ],
+      "train_sessions": null,
+      "val_sessions": null
+    },
+    {
+      "fold": 4,
+      "train_subjects": [
+        "sub-001",
+        "sub-003",
+        "sub-006",
+        "sub-009",
+        "sub-011",
+        "sub-012",
+        "sub-016",
+        "sub-017",
+        "sub-018",
+        "sub-019",
+        "sub-020",
+        "sub-021",
+        "sub-022",
+        "sub-023",
+        "sub-025"
+      ],
+      "val_subjects": [
+        "sub-002",
+        "sub-004",
+        "sub-005",
+        "sub-010",
+        "sub-013"
+      ],
+      "test_subjects": [
+        "sub-007",
+        "sub-008",
+        "sub-014",
+        "sub-015",
+        "sub-024"
+      ],
+      "train_sessions": null,
+      "val_sessions": null
+    }
+  ]
+}

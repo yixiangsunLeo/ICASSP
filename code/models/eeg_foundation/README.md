@@ -112,7 +112,7 @@ The model math is unchanged. The differences, all deliberate:
 ## 5. Update Rules
 
 * New variant -> add to `adapter.VARIANTS` + a `code/configs/models/<name>.yaml` + this table
-  + `0_docs/FILE_CATALOG.md`.
+  (FILE_CATALOG is no longer maintained — `docs/DECISIONS.md` D-029).
 * Changing anything inside `models.py` / `losses.py` / `s4_layers.py` / `pooling.py` /
   `encoders.py` means diverging from the advisor's package: record it in §4 above.
 * Contract tests: `tests/foundation/test_eeg_foundation_contract.py` (19 cases, CPU).
@@ -120,7 +120,7 @@ The model math is unchanged. The differences, all deliberate:
 ## 6. Related Files
 
 - `AGENTS.md`: authoritative project memory.
-- `FOUNDATION_E2E_ROUTE_PLAN.md`: the new mainline route + protocol status.
+- `../../../../_archive/eeg-mi-online_legacy_2026-09-18/FOUNDATION_E2E_ROUTE_PLAN.md`: the 2026-08 E2E route (archived 2026-09-18; superseded by `docs/PLAN_cross_subject_benchmark_and_fusion.md` and `docs/PLAN_spiking_eegnex_icassp2027.md`).
 - `code/training/e2e_trainer.py`: resumable trainer that drives the DualCD hooks.
 - `code/experiments/cross_subject_protocols.py`: the cross-subject protocol.
 - `code/configs/experiments/{foundation_cross_subject,shu_foundation_cross_subject}.yaml`.

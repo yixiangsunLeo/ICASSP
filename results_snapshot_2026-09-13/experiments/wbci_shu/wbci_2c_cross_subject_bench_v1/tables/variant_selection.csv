@@ -1,0 +1,4 @@
+family,model,val_score,test_score,selected,val_rank,test_rank
+s4erp_dw,s4erp_dw@f64d2,0.8199187533603081,0.8068464052287582,False,2,1
+s4erp_dw,s4erp_dw@f16d8,0.820100645814971,0.806062091503268,True,1,2
+s4erp_dw,s4erp_dw@f16d2p,0.8181552253632287,0.8027450980392157,False,3,3
